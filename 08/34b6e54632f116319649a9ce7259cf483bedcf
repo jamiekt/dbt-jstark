@@ -1,0 +1,57 @@
+integration_tests/macros/tests/test_mealkit.sql
+  s_768496ec7dbf5b::t_517d17be700778 183-187
+  s_768496ec7dbf5b::t_d2b2b1caf29af7 247-353
+  s_768496ec7dbf5b::t_b7b33b2444ee62 354
+integration_tests/macros/tests/test_registry.sql
+  s_768496ec7dbf5b::t_42cc8647150208 45-83
+  s_768496ec7dbf5b::t_ea40a7b9a79dda 393-396
+macros/mealkit/features/mealkit_cuisines.sql
+  s_768496ec7dbf5b::t_589f6f46585ce7 33-110,113-117
+  s_768496ec7dbf5b::t_5e6c12c3a707f3 118
+macros/core/context.sql
+  s_768496ec7dbf5b::t_4ba4175d74b529 47-51
+  s_768496ec7dbf5b::t_22bb68377b492e 52-56
+  s_768496ec7dbf5b::t_dbbcc054bcb0f1 90-153
+  s_768496ec7dbf5b::t_552f9e1c4ae094 154-155
+integration_tests/macros/tests/test_period.sql
+  s_768496ec7dbf5b::t_52be53f476d98c 94-145
+macros/core/exceptions.sql
+  s_768496ec7dbf5b::t_38ccfc401082cd 19-23,28-41
+  s_768496ec7dbf5b::t_3d3a241831ec84 42-44
+macros/core/generate_features.sql
+  s_768496ec7dbf5b::t_e4207dd3afbd59 50-52
+macros/core/registry.sql
+  s_768496ec7dbf5b::t_4ec48c8ecb0668 44-46,54,59-111
+  s_768496ec7dbf5b::t_a708ed0c3646dd 32
+  s_768496ec7dbf5b::t_d58096b658d592 112-113
+integration_tests/macros/tests/test_engine.sql
+  s_768496ec7dbf5b::t_da637c8cba16f0 159-177
+integration_tests/macros/tests/test_harness.sql
+  s_768496ec7dbf5b::t_7e811ed7ba9bc9 91-127
+  s_768496ec7dbf5b::t_a922a4a1be2df4 43-65,67-69
+integration_tests/macros/tests/test_context.sql
+  s_768496ec7dbf5b::t_b3ece6748b9188 82-93,100-132
+  s_768496ec7dbf5b::t_0d8193e12e7844 197-221,224-255
+  s_768496ec7dbf5b::t_a727fbcfee3064 94-99
+  s_768496ec7dbf5b::t_d6fff0caa545d9 81
+  s_768496ec7dbf5b::t_01f62ffdda4bbb 222-223
+  s_768496ec7dbf5b::t_2852cac69c185c 256
+macros/core/period/parse_mnemonic.sql
+  s_768496ec7dbf5b::t_2e5cb6ce3dc804 98-118,120-123,125,128-130,132-146,148-161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0834b6e54632f116319649a9ce7259cf483bedcf",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
