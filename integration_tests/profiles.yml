@@ -30,6 +30,8 @@ jstark_integration_tests:
       project: "{{ env_var('JSTARK_BIGQUERY_PROJECT', '') }}"
       dataset: "{{ env_var('JSTARK_BIGQUERY_DATASET', 'jstark') }}"
       threads: 4
+      # /dev/null is a deliberate non-existent-path placeholder: it is never
+      # read at parse time. Real CI supplies JSTARK_BIGQUERY_KEYFILE.
       keyfile: "{{ env_var('JSTARK_BIGQUERY_KEYFILE', '/dev/null') }}"
     databricks:
       type: databricks

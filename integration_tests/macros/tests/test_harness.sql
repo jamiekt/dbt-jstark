@@ -1,53 +1,71 @@
-{% macro jstark_test_harness(failures) %}
+{% macro jstark_test_harness(results) %}
 
-  {# jstark_assert_equal records nothing when values match #}
+  {# jstark_assert_equal records a passing entry on a match #}
   {% set probe = [] %}
   {% do jstark_assert_equal(probe, 'probe', 1, 1) %}
-  {% do jstark_assert_equal(failures, 'assert_equal is silent on a match', probe | length, 0) %}
+  {% do jstark_assert_equal(
+      results, 'assert_equal records a passing entry on a match: length',
+      probe | length, 1
+  ) %}
+  {% do jstark_assert_true(
+      results, 'assert_equal records a passing entry on a match: ok flag',
+      probe[0]['ok']
+  ) %}
 
-  {# jstark_assert_equal records exactly one message when values differ #}
+  {# jstark_assert_equal records the failure message wording on a mismatch #}
   {% set probe2 = [] %}
   {% do jstark_assert_equal(probe2, 'probe2', 1, 2) %}
-  {% do jstark_assert_equal(failures, 'assert_equal records a mismatch', probe2 | length, 1) %}
+  {% do jstark_assert_equal(results, 'assert_equal records a mismatch', probe2 | length, 1) %}
   {% do jstark_assert_equal(
-      failures,
+      results, 'assert_equal message format: ok flag',
+      probe2[0]['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results,
       'assert_equal message format',
-      probe2[0],
+      probe2[0]['message'],
       'probe2: expected 2 but got 1'
   ) %}
 
-  {# jstark_assert_true records only for falsey values #}
+  {# jstark_assert_true records both calls but fails only the falsey one #}
   {% set probe3 = [] %}
   {% do jstark_assert_true(probe3, 'probe3', true) %}
   {% do jstark_assert_true(probe3, 'probe3', false) %}
-  {% do jstark_assert_equal(failures, 'assert_true records only falsey', probe3 | length, 1) %}
+  {% do jstark_assert_equal(
+      results, 'assert_true records both calls but fails only the falsey one: length',
+      probe3 | length, 2
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'assert_true records both calls but fails only the falsey one: failure count',
+      probe3 | rejectattr('ok') | list | length, 1
+  ) %}
 
   {# error codes are stable #}
   {% set codes = jstark.error_codes() %}
   {% do jstark_assert_equal(
-      failures, 'code: mnemonic_is_invalid',
+      results, 'code: mnemonic_is_invalid',
       codes['mnemonic_is_invalid'], 'feature_period_mnemonic_is_invalid'
   ) %}
   {% do jstark_assert_equal(
-      failures, 'code: end_greater_than_start',
+      results, 'code: end_greater_than_start',
       codes['end_greater_than_start'], 'feature_period_end_greater_than_start'
   ) %}
   {% do jstark_assert_equal(
-      failures, 'code: feature_not_found',
+      results, 'code: feature_not_found',
       codes['feature_not_found'], 'feature_not_found'
   ) %}
   {% do jstark_assert_equal(
-      failures, 'code: unknown_column_map_key',
+      results, 'code: unknown_column_map_key',
       codes['unknown_column_map_key'], 'unknown_column_map_key'
   ) %}
   {% do jstark_assert_equal(
-      failures, 'code: invalid_first_day_of_week',
+      results, 'code: invalid_first_day_of_week',
       codes['invalid_first_day_of_week'], 'invalid_first_day_of_week'
   ) %}
 
   {# error_message formats consistently #}
   {% do jstark_assert_equal(
-      failures, 'error_message format',
+      results, 'error_message format',
       jstark.error_message('feature_not_found', "['Nope'] is not a known feature stem"),
       "jstark: feature_not_found: ['Nope'] is not a known feature stem"
   ) %}

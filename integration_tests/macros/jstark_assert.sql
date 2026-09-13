@@ -1,14 +1,24 @@
-{% macro jstark_assert_equal(failures, label, actual, expected) %}
+{% macro jstark_assert_equal(results, label, actual, expected) %}
   {% if actual != expected %}
-    {% do failures.append(
-        label ~ ': expected ' ~ (expected | string) ~ ' but got ' ~ (actual | string)
-    ) %}
+    {% do results.append({
+        'ok': false,
+        'label': label,
+        'message': label ~ ': expected ' ~ (expected | string) ~ ' but got ' ~ (actual | string)
+    }) %}
+  {% else %}
+    {% do results.append({'ok': true, 'label': label}) %}
   {% endif %}
 {% endmacro %}
 
 
-{% macro jstark_assert_true(failures, label, actual) %}
+{% macro jstark_assert_true(results, label, actual) %}
   {% if not actual %}
-    {% do failures.append(label ~ ': expected a truthy value but got ' ~ (actual | string)) %}
+    {% do results.append({
+        'ok': false,
+        'label': label,
+        'message': label ~ ': expected a truthy value but got ' ~ (actual | string)
+    }) %}
+  {% else %}
+    {% do results.append({'ok': true, 'label': label}) %}
   {% endif %}
 {% endmacro %}
