@@ -40,26 +40,26 @@ unit_tests:
         rows: |
           select 'c1' as customer, 's1' as store, 'b1' as basket,
                  cast('2021-11-15' as date) as event_timestamp,
-                 cast(10.0 as double) as gross_spend
+                 cast(10.0 as double precision) as gross_spend
           union all
-          select 'c1', 's1', 'b1', cast('2021-11-15' as date), cast(5.0 as double)
+          select 'c1', 's1', 'b1', cast('2021-11-15' as date), cast(5.0 as double precision)
           union all
-          select 'c1', 's1', 'b2', cast('2021-12-31' as date), cast(20.0 as double)
+          select 'c1', 's1', 'b2', cast('2021-12-31' as date), cast(20.0 as double precision)
           union all
-          select 'c1', 's1', 'b3', cast('2022-01-01' as date), cast(99.0 as double)
+          select 'c1', 's1', 'b3', cast('2022-01-01' as date), cast(99.0 as double precision)
           union all
-          select 'c2', 's2', 'b4', cast('2021-10-01' as date), cast(7.5 as double)
+          select 'c2', 's2', 'b4', cast('2021-10-01' as date), cast(7.5 as double precision)
           union all
-          select 'c2', 's2', 'b5', cast('2021-09-30' as date), cast(99.0 as double)
+          select 'c2', 's2', 'b5', cast('2021-09-30' as date), cast(99.0 as double precision)
     expect:
       format: sql
       rows: |
           select 'c1' as customer,
-                 cast(35.0 as double) as test_spend_3m1,
+                 cast(35.0 as double precision) as test_spend_3m1,
                  2 as test_basket_count_3m1,
-                 cast(17.5 as double) as test_spend_per_basket_3m1
+                 cast(17.5 as double precision) as test_spend_per_basket_3m1
           union all
-          select 'c2', cast(7.5 as double), 1, cast(7.5 as double)
+          select 'c2', cast(7.5 as double precision), 1, cast(7.5 as double precision)
 
   - name: engine_shape_defaults_when_the_window_is_empty
     description: >
@@ -73,11 +73,11 @@ unit_tests:
         rows: |
           select 'c9' as customer, 's1' as store, 'b9' as basket,
                  cast('2020-01-01' as date) as event_timestamp,
-                 cast(42.0 as double) as gross_spend
+                 cast(42.0 as double precision) as gross_spend
     expect:
       format: sql
       rows: |
           select 'c9' as customer,
-                 cast(0.0 as double) as test_spend_3m1,
+                 cast(0.0 as double precision) as test_spend_3m1,
                  0 as test_basket_count_3m1,
-                 cast(null as double) as test_spend_per_basket_3m1
+                 cast(null as double precision) as test_spend_per_basket_3m1

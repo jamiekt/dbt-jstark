@@ -16,17 +16,17 @@ unit_tests:
         rows: |
           select 'c1' as customer, 'p1' as product, 'b1' as basket,
                  cast('2021-10-01' as date) as event_timestamp,
-                 2 as quantity, cast(10.0 as double) as gross_spend,
-                 cast(8.0 as double) as net_spend, cast(2.0 as double) as discount
+                 2 as quantity, cast(10.0 as double precision) as gross_spend,
+                 cast(8.0 as double precision) as net_spend, cast(2.0 as double precision) as discount
           union all
           select 'c1', 'p2', 'b1', cast('2021-11-15' as date), 4,
-                 cast(20.0 as double), cast(16.0 as double), cast(4.0 as double)
+                 cast(20.0 as double precision), cast(16.0 as double precision), cast(4.0 as double precision)
           union all
           select 'c1', 'p1', 'b2', cast('2021-12-31' as date), 1,
-                 cast(3.0 as double), cast(3.0 as double), cast(0.0 as double)
+                 cast(3.0 as double precision), cast(3.0 as double precision), cast(0.0 as double precision)
           union all
           select 'c1', 'p3', 'b3', cast('2022-01-01' as date), 9,
-                 cast(99.0 as double), cast(99.0 as double), cast(9.0 as double)
+                 cast(99.0 as double precision), cast(99.0 as double precision), cast(9.0 as double precision)
     expect:
       format: sql
       rows: |
@@ -37,17 +37,17 @@ unit_tests:
                  2 as product_count_3m1,
                  2 as approx_product_count_3m1,
                  7 as quantity_3m1,
-                 cast(6.0 as double) as discount_3m1,
-                 cast(33.0 as double) as gross_spend_3m1,
-                 cast(27.0 as double) as net_spend_3m1,
-                 cast(3.0 as double) as min_gross_spend_3m1,
-                 cast(20.0 as double) as max_gross_spend_3m1,
-                 cast(3.0 as double) as min_net_spend_3m1,
-                 cast(16.0 as double) as max_net_spend_3m1,
-                 cast(3.0 as double) as min_gross_price_3m1,
-                 cast(5.0 as double) as max_gross_price_3m1,
-                 cast(3.0 as double) as min_net_price_3m1,
-                 cast(4.0 as double) as max_net_price_3m1,
+                 cast(6.0 as double precision) as discount_3m1,
+                 cast(33.0 as double precision) as gross_spend_3m1,
+                 cast(27.0 as double precision) as net_spend_3m1,
+                 cast(3.0 as double precision) as min_gross_spend_3m1,
+                 cast(20.0 as double precision) as max_gross_spend_3m1,
+                 cast(3.0 as double precision) as min_net_spend_3m1,
+                 cast(16.0 as double precision) as max_net_spend_3m1,
+                 cast(3.0 as double precision) as min_gross_price_3m1,
+                 cast(5.0 as double precision) as max_gross_price_3m1,
+                 cast(3.0 as double precision) as min_net_price_3m1,
+                 cast(4.0 as double precision) as max_net_price_3m1,
                  1 as recency_days_3m1,
                  cast('2021-10-01' as date) as earliest_purchase_date_3m1,
                  cast('2021-12-31' as date) as most_recent_purchase_date_3m1
@@ -64,8 +64,8 @@ unit_tests:
         rows: |
           select 'c9' as customer, 'p1' as product, 'b9' as basket,
                  cast('2020-01-01' as date) as event_timestamp,
-                 5 as quantity, cast(50.0 as double) as gross_spend,
-                 cast(45.0 as double) as net_spend, cast(5.0 as double) as discount
+                 5 as quantity, cast(50.0 as double precision) as gross_spend,
+                 cast(45.0 as double precision) as net_spend, cast(5.0 as double precision) as discount
     expect:
       format: sql
       rows: |
@@ -76,17 +76,17 @@ unit_tests:
                  0 as product_count_3m1,
                  0 as approx_product_count_3m1,
                  0 as quantity_3m1,
-                 cast(0.0 as double) as discount_3m1,
-                 cast(0.0 as double) as gross_spend_3m1,
-                 cast(0.0 as double) as net_spend_3m1,
-                 cast(0.0 as double) as min_gross_spend_3m1,
-                 cast(null as double) as max_gross_spend_3m1,
-                 cast(0.0 as double) as min_net_spend_3m1,
-                 cast(null as double) as max_net_spend_3m1,
-                 cast(0.0 as double) as min_gross_price_3m1,
-                 cast(null as double) as max_gross_price_3m1,
-                 cast(0.0 as double) as min_net_price_3m1,
-                 cast(null as double) as max_net_price_3m1,
+                 cast(0.0 as double precision) as discount_3m1,
+                 cast(0.0 as double precision) as gross_spend_3m1,
+                 cast(0.0 as double precision) as net_spend_3m1,
+                 cast(0.0 as double precision) as min_gross_spend_3m1,
+                 cast(null as double precision) as max_gross_spend_3m1,
+                 cast(0.0 as double precision) as min_net_spend_3m1,
+                 cast(null as double precision) as max_net_spend_3m1,
+                 cast(0.0 as double precision) as min_gross_price_3m1,
+                 cast(null as double precision) as max_gross_price_3m1,
+                 cast(0.0 as double precision) as min_net_price_3m1,
+                 cast(null as double precision) as max_net_price_3m1,
                  0 as recency_days_3m1,
                  cast(null as date) as earliest_purchase_date_3m1,
                  cast(null as date) as most_recent_purchase_date_3m1

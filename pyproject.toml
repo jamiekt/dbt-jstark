@@ -8,6 +8,12 @@ dependencies = [
     "dbt-duckdb>=1.8,<2.0",
 ]
 
+[project.optional-dependencies]
+postgres = ["dbt-postgres>=1.8,<2.0"]
+snowflake = ["dbt-snowflake>=1.8,<2.0"]
+bigquery = ["dbt-bigquery>=1.8,<2.0"]
+databricks = ["dbt-databricks>=1.8,<2.0"]
+
 [dependency-groups]
 dev = [
     "pre-commit",

@@ -3,9 +3,10 @@
 
   No SQL is emitted here. build_plan resolves the requested feature stems and
   periods into a dependency closure, then levels that closure topologically so
-  that Task 9's renderer can emit one CTE per level. Levelling is necessary
-  because SQL cannot reference a select-list alias from the same select, and
-  jstark has derived features that depend on other derived features.
+  that generate_features (macros/core/generate_features.sql) can emit one CTE
+  per level. Levelling is necessary because SQL cannot reference a select-list
+  alias from the same select, and jstark has derived features that depend on
+  other derived features.
 
   A dependency is a [stem, period] pair, not just a stem: BasketPeriods for
   3m1 depends on activity in each of 3m3, 2m2 and 1m1. Those pulled-in

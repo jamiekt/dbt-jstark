@@ -215,4 +215,42 @@
       < structure_text.index('      - name: gross_spend_3m1')
   ) %}
 
+  {# --- the feature reference is one row per stem, not per stem-and-period --- #}
+  {% set reference = jstark.feature_reference_rows('grocery', []) %}
+  {% do jstark_assert_equal(
+      results, 'grocery reference row count', reference | length, 37
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'reference rows are unique per stem',
+      reference | map(attribute='stem') | unique | list | length, 37
+  ) %}
+  {% set first = reference[0] %}
+  {% for key in ['stem', 'column_name_pattern', 'kind', 'description_subject',
+                 'commentary', 'required_columns'] %}
+    {% do jstark_assert_true(
+        results, 'reference row has ' ~ key, key in first
+    ) %}
+  {% endfor %}
+  {#- indexed with [] rather than the attr filter: attr does not fall back to
+      item lookup, so on a dict it returns undefined -#}
+  {% set order_periods_row = jstark.feature_reference_rows('mealkit', [])
+      | selectattr('stem', 'equalto', 'OrderPeriods') | first %}
+  {% do jstark_assert_equal(
+      results, 'reference column name pattern keeps the period placeholder',
+      order_periods_row['column_name_pattern'], 'order_{unit}s_{period}'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'mealkit reference row count',
+      jstark.feature_reference_rows('mealkit', []) | length, 23
+  ) %}
+  {#- the paired negative: a feature whose name does not depend on the unit
+      must come out with no {unit} in it at all, which is what proves the
+      _month substitution fires only where it should -#}
+  {% set net_spend_row = jstark.feature_reference_rows('grocery', [])
+      | selectattr('stem', 'equalto', 'NetSpend') | first %}
+  {% do jstark_assert_equal(
+      results, 'reference leaves a unit-independent name alone',
+      net_spend_row['column_name_pattern'], 'net_spend_{period}'
+  ) %}
+
 {% endmacro %}
