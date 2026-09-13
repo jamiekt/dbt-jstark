@@ -1,0 +1,17 @@
+[project]
+name = "dbt-jstark-dev"
+version = "0.1.0"
+description = "Development environment for the dbt-jstark package. Not published; the deliverable is the dbt package itself."
+requires-python = ">=3.11"
+dependencies = [
+    "dbt-core>=1.8,<2.0",
+    "dbt-duckdb>=1.8,<2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+]
+
+[tool.uv]
+package = false
