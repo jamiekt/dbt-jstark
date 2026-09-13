@@ -1,0 +1,25 @@
+macros/core/exceptions.sql
+  s_768496ec7dbf5b::t_b408089c7fed0e 16-17
+integration_tests/macros/tests/test_context.sql
+  s_768496ec7dbf5b::t_e489732bf230cf 1-150
+integration_tests/macros/jstark_test_suite.sql
+  s_768496ec7dbf5b::t_1fd9b359a2f6b8 11
+macros/core/context.sql
+  s_768496ec7dbf5b::t_039b64d10cb8ca 1-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0db6f02366343ec804d4f280950badacfba17dda",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
