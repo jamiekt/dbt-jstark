@@ -20,11 +20,38 @@
 
   {% set window = "cast(event_timestamp as date) between date '2021-10-01' and date '2021-12-31'" %}
 
+  {#- the DuckDB spelling is asserted against duckdb__ by name as well as
+      through the dispatch, because the two were once the same macro:
+      default__jstark_collect_set held this list_sort() SQL, so every adapter
+      without an override inherited DuckDB's dialect. default__ now raises
+      instead (see macros/core/adapters/jstark_collect_set.sql), which cannot be
+      asserted here - Jinja has no try/except - so the message it raises is
+      pinned through unsupported_adapter_detail below. -#}
   {% do jstark_assert_equal(
       results, 'collect_set',
       jstark.collect_set('allergen', window),
       'list_sort(array_agg(distinct allergen) filter (where ('
       ~ window ~ ') and allergen is not null))'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'collect_set dispatches to duckdb__ on duckdb',
+      jstark.collect_set('allergen', window),
+      jstark.duckdb__jstark_collect_set('allergen', window)
+  ) %}
+  {#- a named adapter that is not the one running, so the expected text can be
+      written out in full rather than interpolating target.type -#}
+  {% do jstark_assert_equal(
+      results, 'unsupported_adapter_detail names the adapter and the file',
+      jstark.error_message(
+          jstark.error_codes()['unsupported_adapter'],
+          jstark.unsupported_adapter_detail('jstark_collect_set', 'databricks')
+      ),
+      'jstark: unsupported_adapter: no databricks__jstark_collect_set is '
+      ~ 'defined and there is no portable default for it. Add '
+      ~ 'databricks__jstark_collect_set to '
+      ~ 'macros/core/adapters/jstark_collect_set.sql. jstark stops here rather '
+      ~ "than emitting another warehouse's dialect, which would fail as an "
+      ~ 'unexplained syntax error instead.'
   ) %}
 
   {#- pinned as a literal 'double precision', not dbt.type_float() ~ ..., so
