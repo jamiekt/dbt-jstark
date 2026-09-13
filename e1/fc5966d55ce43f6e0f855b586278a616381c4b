@@ -1,0 +1,29 @@
+macros/grocery/features/grocery_periodic.sql
+  s_768496ec7dbf5b::t_361e4876d7124c 53-57
+  s_768496ec7dbf5b::t_57b74664e9a80a 61,63
+integration_tests/seeds/expected_grocery_features.csv
+  s_768496ec7dbf5b::t_b68e97785150cf 2
+integration_tests/macros/tests/test_grocery.sql
+  s_768496ec7dbf5b::t_218c594bafe23d 158-203
+  s_768496ec7dbf5b::t_e323690f165f4a 94-97,99,101
+integration_tests/macros/tests/test_adapters.sql
+  s_768496ec7dbf5b::t_6f27b8b1d6d3b2 41-53
+integration_tests/models/grocery/_grocery.yml
+  s_768496ec7dbf5b::t_bfa87ec026542a 54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e1fc5966d55ce43f6e0f855b586278a616381c4b",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
