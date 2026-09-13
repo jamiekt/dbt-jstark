@@ -89,9 +89,22 @@
       jstark.column_name('South AfricanCuisineCount', ctx['period']),
       'south_african_cuisine_count_3m1'
   ) %}
+  {#- the comparison is case-insensitive on both sides, matching jstark
+      (cuisine_count.py:31-33: f.lower(f.col("Cuisine")) ==
+      self.CUISINE_NAME.lower()), so cuisines=['Italian'] matches data stored
+      as 'italian'. Only the comparison lowercases; the stem and column name
+      keep the caller's casing (checked separately above/below). -#}
   {% do jstark_assert_equal(
-      results, 'per-cuisine expression',
-      cat['ItalianCuisineCount']['expression'], "cuisine = 'Italian'"
+      results, 'per-cuisine expression is case-insensitive',
+      cat['ItalianCuisineCount']['expression'], "lower(cuisine) = 'italian'"
+  ) %}
+  {#- pins both halves at once: the caller's value is lowercased, and the
+      space in a multi-word cuisine survives in the SQL literal even though
+      it becomes an underscore in the column name. -#}
+  {% do jstark_assert_equal(
+      results, 'per-cuisine expression lowercases a multi-word cuisine',
+      cat['South AfricanCuisineCount']['expression'],
+      "lower(cuisine) = 'south african'"
   ) %}
   {% do jstark_assert_equal(
       results, 'per-cuisine aggregator',
@@ -99,6 +112,19 @@
   ) %}
   {% do jstark_assert_equal(
       results, 'per-cuisine default', cat['ThaiCuisineCount']['default'], '0'
+  ) %}
+
+  {#- an embedded single quote in the cuisine value must not break the
+      generated SQL: it is doubled, not stripped, so the literal round-trips
+      to the original apostrophe when the warehouse parses it back. -#}
+  {% set apostrophe_ctx = jstark.feature_context(
+      jstark.parse_feature_period('3m1'), as_at, 'Monday', false, cols,
+      ["Shepherd's"]
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'per-cuisine expression escapes an embedded apostrophe',
+      jstark.catalogue('mealkit', apostrophe_ctx)["Shepherd'sCuisineCount"]['expression'],
+      "lower(cuisine) = 'shepherd''s'"
   ) %}
 
   {# --- no cuisines parameter means no per-cuisine features --- #}
@@ -117,9 +143,14 @@
   {% do jstark_assert_equal(
       results, 'Allergens aggregator', cat['Allergens']['aggregator'], 'collect_set'
   ) %}
-  {% do jstark_assert_true(
-      results, 'Allergens does not default to null',
-      cat['Allergens']['default'] != 'null'
+  {#- pinned as an equality against the rendered literal, not a != 'null'
+      truthiness check that would pass for any non-null value at all. The L1
+      suite always compiles against the active adapter (duckdb here, as
+      test_adapters.sql's 'double_type on duckdb' assertion also relies on),
+      so an adapter-specific literal is safe without a guard. -#}
+  {% do jstark_assert_equal(
+      results, 'Allergens defaults to an empty array of strings',
+      cat['Allergens']['default'], 'cast(list_value() as TEXT[])'
   ) %}
 
   {# --- mealkit is two derived levels deep, as grocery is --- #}
@@ -157,6 +188,51 @@
           as_at='2022-01-01', feature_periods=['3m1'],
           feature_stems=['OrderCount'], cuisines=cuisines
       ))
+  ) %}
+
+  {#- commentary is catalogue metadata the SQL engine never emits, so L1 is
+      the only surface that can catch a wrong splice position - a truthiness
+      or "contains" check would pass even if the interpolated value landed in
+      the wrong place. Each expected string below is a whole hard-coded
+      literal, not built from the definition or from the macro under test,
+      per the precedent in test_registry.sql (core commentaries) and
+      test_grocery.sql (BasketPeriods and RecencyWeighted*). -#}
+  {% do jstark_assert_equal(
+      results, 'ApproxOrderCount commentary is verbatim for 3m1',
+      cat['ApproxOrderCount']['commentary'],
+      'The approximate number of orders. Similar to OrderCount_3m1 except '
+      ~ 'that it uses an approximation algorithm which will not be as '
+      ~ 'accurate as OrderCount_3m1 but will be a lot quicker to compute and '
+      ~ 'in many cases will be "close enough".'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'ApproxRecipeCount commentary is verbatim for 3m1',
+      cat['ApproxRecipeCount']['commentary'],
+      'The approximate number of recipes. Similar to RecipeCount_3m1 except '
+      ~ 'that it uses an approximation algorithm which will not be as '
+      ~ 'accurate as RecipeCount_3m1 but will be a lot quicker to compute '
+      ~ 'and in many cases will be "close enough".'
+  ) %}
+  {#- carries the deliberate divergence from jstark's own (copy-pasted, wrong)
+      commentary: jstark's order_periods.py says "at least one basket was
+      purchased"; this pins what dbt-jstark actually emits, "at least one
+      order was placed". -#}
+  {% do jstark_assert_equal(
+      results, 'OrderPeriods commentary is verbatim for 3m1',
+      cat['OrderPeriods']['commentary'],
+      'The number of months in which at least one order was placed. The '
+      ~ 'value will be in the range 0 to 3 because 3 is the number of months '
+      ~ 'between 2021-10-01 and 2021-12-31. When grouped by Customer and '
+      ~ 'Product this feature is a useful indicator of the frequency of '
+      ~ 'which a Customer purchases a Product.'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'ItalianCuisineCount commentary is verbatim',
+      cat['ItalianCuisineCount']['commentary'],
+      'The number of Italian recipes. Typically the dataframe supplied to '
+      ~ 'this feature will have many recipes for the same cuisine, this '
+      ~ 'feature allows you to determine how many Italian recipes have been '
+      ~ 'ordered.'
   ) %}
 
 {% endmacro %}
