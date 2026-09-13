@@ -1,0 +1,21 @@
+integration_tests/macros/tests/test_registry.sql
+  s_768496ec7dbf5b::t_8eaf223fecf6e2 192-222
+macros/core/registry.sql
+  s_768496ec7dbf5b::t_001b7d8f3e28ce 310-318,320
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c53092bc3d57b89fb66235e8d6c27805d2b20b02",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
