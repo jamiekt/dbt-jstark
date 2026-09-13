@@ -1,0 +1,33 @@
+macros/core/adapters/jstark_collect_set.sql
+  s_768496ec7dbf5b::t_b437cd581211b9 1-48
+macros/core/adapters/safe_divide.sql
+  s_768496ec7dbf5b::t_bd0992d76f030a 1-16
+macros/core/adapters/aggregate_sql.sql
+  s_768496ec7dbf5b::t_cac564972942c4 1-61
+macros/core/adapters/jstark_to_date.sql
+  s_768496ec7dbf5b::t_17459a45634d12 1-16
+integration_tests/macros/tests/test_adapters.sql
+  s_768496ec7dbf5b::t_9051e184be9ec9 1-103
+macros/core/adapters/jstark_approx_count_distinct.sql
+  s_768496ec7dbf5b::t_6b8493bf665334 1-28
+macros/core/exceptions.sql
+  s_768496ec7dbf5b::t_76e6d8c6bf2fcc 15-16
+integration_tests/macros/jstark_test_suite.sql
+  s_768496ec7dbf5b::t_53b394cd9dfe34 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ebde9967fd588608ba93be63a24cafbb19d5d7e9",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
