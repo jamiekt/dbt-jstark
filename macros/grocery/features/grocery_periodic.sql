@@ -50,15 +50,17 @@
           ~ ' which a Customer purchases a Product.'
   }}) %}
 
-  {#- AvgBasket: baskets per whole unit across the window. jstark does not
-      override commentary for this feature, so it inherits the base class
-      default. -#}
+  {#- AvgBasket: baskets per whole unit across the window. Divides
+      BasketCount, not Count: see average_basket.py:16-27, which constructs a
+      BasketCount at the same feature period and divides that by
+      number_of_periods. jstark does not override commentary for this
+      feature, so it inherits the base class default. -#}
   {% do definitions.update({'AvgBasket': {
       'stem': 'AvgBasket',
       'kind': 'derived',
-      'depends_on': [['Count', period]],
+      'depends_on': [['BasketCount', period]],
       'expression': jstark.safe_divide(
-          jstark.column_name('Count', period),
+          jstark.column_name('BasketCount', period),
           period['number_of_periods'] | string
       ),
       'default': 'null',

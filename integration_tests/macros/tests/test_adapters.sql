@@ -38,6 +38,19 @@
       'cast(gross_spend_3m1 as double precision) / nullif(basket_count_3m1, 0)'
   ) %}
 
+  {#- double_type() itself has no standalone assertion elsewhere; it is
+      otherwise only exercised indirectly through safe_divide. Both variants
+      are plain string-returning macros, so neither needs a live warehouse:
+      double_type() dispatches to the active adapter (duckdb here), and the
+      bigquery__ variant is called directly regardless of target. -#}
+  {% do jstark_assert_equal(
+      results, 'double_type on duckdb', jstark.double_type(), 'double precision'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'double_type on bigquery',
+      jstark.bigquery__jstark_double_type(), 'float64'
+  ) %}
+
   {# --- aggregate_sql covers every aggregator --- #}
   {% do jstark_assert_equal(
       results, 'aggregate_sql(sum)',

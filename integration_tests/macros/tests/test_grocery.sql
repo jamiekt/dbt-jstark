@@ -91,11 +91,14 @@
       cat['RecencyWeightedApproxBasket95']['expression'], 'approx_basket_count_1m1'
   ) %}
 
-  {# --- AvgBasket divides by the number of whole periods in the window --- #}
+  {# --- AvgBasket divides distinct baskets by the number of whole periods --- #}
+  {#- the expected value is a literal, not jstark.safe_divide(...): building it
+      with the same macro the implementation calls would let a change in
+      safe_divide's own output pass unnoticed here -#}
   {% do jstark_assert_equal(
-      results, 'AvgBasket expression',
+      results, 'AvgBasket divides distinct baskets, not rows',
       cat['AvgBasket']['expression'],
-      jstark.safe_divide('count_3m1', '3')
+      'cast(basket_count_3m1 as double precision) / nullif(3, 0)'
   ) %}
 
   {# --- grocery is two derived levels deep --- #}
@@ -150,6 +153,52 @@
       ~ 'between 2021-10-01 and 2021-12-31. When grouped by Customer and '
       ~ 'Product this feature is a useful indicator of the frequency of which '
       ~ 'a Customer purchases a Product.'
+  ) %}
+
+  {#- Only two distinct commentary templates back the 12 recency-weighted
+      stems (RecencyWeightedBasket* and RecencyWeightedApproxBasket*, each
+      shared across the three smoothing factors). Pin both, at 95, as whole
+      hard-coded literals — not assembled from the smoothing factor, the
+      unit, or the definition — per recency_weighted_basket.py:66-83 (approx)
+      and :133-161 (non-approx). Both contain a genuine jstark double space
+      ("because it " + " does/requires ...") that must be reproduced, not
+      tidied. -#}
+  {% do jstark_assert_equal(
+      results, 'RecencyWeightedApproxBasket95 commentary is jstark-verbatim for 3m1',
+      cat['RecencyWeightedApproxBasket95']['commentary'],
+      'Exponential smoothing (https://en.wikipedia.org/wiki/Exponential_smoothing)'
+      ~ ' is an alternative to a simple moving average which gives greater'
+      ~ ' weighting to more recent observations, thus is an exponentially'
+      ~ ' weighted moving average. It uses a smoothing factor between 0 & 1'
+      ~ ' which for this feature is 0.95. Here the approximate number of'
+      ~ ' baskets per month is smoothed. This feature is considered to be a'
+      ~ ' highly effective predictor of future purchases, if a customer has'
+      ~ " bought a product recently then there's a relatively high probability"
+      ~ ' they will buy it again. This is less accurate than'
+      ~ ' RecencyWeightedBasketMonths95_3m1 though is less computationally'
+      ~ ' expensive to calculate because it  does not calculate a distinct'
+      ~ ' count for each month.'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'RecencyWeightedBasket95 commentary is jstark-verbatim for 3m1',
+      cat['RecencyWeightedBasket95']['commentary'],
+      'Exponential smoothing (https://en.wikipedia.org/wiki/Exponential_smoothing)'
+      ~ ' is an alternative to a simple moving average which gives greater'
+      ~ ' weighting to more recent observations, thus is an exponentially'
+      ~ ' weighted moving average. It uses a smoothing factor between 0 & 1'
+      ~ ' which for this feature is 0.95. Here the number of baskets per'
+      ~ ' month is smoothed. This feature is considered to be a highly'
+      ~ ' effective predictor of future purchases, if a customer has bought a'
+      ~ " product recently then there's a relatively high probability they"
+      ~ ' will buy it again. This is computationally expensive to calculate'
+      ~ ' because it  requires a distinct count of baskets for each month.'
+      ~ ' Every distinct count operation is expensive so the less that are'
+      ~ ' performed, the better (YMMV based on a number of factors, mainly'
+      ~ ' the volume of data being processed). For this reason you should'
+      ~ ' consider choosing a small number of months for the feature period.'
+      ~ ' This feature (RecencyWeightedBasketMonths95_3m1) is for 3 months.'
+      ~ ' You might consider using RecencyWeightedApproxBasketMonths95_3m1'
+      ~ ' instead which is less accurate but computationally cheaper.'
   ) %}
 
 {% endmacro %}

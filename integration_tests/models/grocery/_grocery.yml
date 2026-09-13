@@ -51,7 +51,7 @@ unit_tests:
                  cast(45.0 as double) as avg_purchase_cycle_3m1,
                  cast(2.0 as double) / 45.0 as cycles_since_last_purchase_3m1,
                  2 as basket_months_3m1,
-                 cast(3.0 as double) / 3.0 as average_baskets_per_month_3m1,
+                 cast(2.0 as double) / 3.0 as average_baskets_per_month_3m1,
                  cast({{ 1 * (0.9 ** 1) + 0 * (0.9 ** 2) + 1 * (0.9 ** 3) }} as double)
                    as recency_weighted_basket_months90_3m1,
                  cast({{ 1 * (0.95 ** 1) + 0 * (0.95 ** 2) + 1 * (0.95 ** 3) }} as double)
