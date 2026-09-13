@@ -7,30 +7,30 @@ jstark_integration_tests:
       threads: 4
     postgres:
       type: postgres
-      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
-      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
-      user: "{{ env_var('POSTGRES_USER', 'postgres') }}"
-      password: "{{ env_var('POSTGRES_PASSWORD', 'postgres') }}"
-      dbname: "{{ env_var('POSTGRES_DATABASE', 'postgres') }}"
-      schema: "{{ env_var('POSTGRES_SCHEMA', 'jstark') }}"
+      host: "{{ env_var('JSTARK_POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('JSTARK_POSTGRES_PORT', '5432') | int }}"
+      user: "{{ env_var('JSTARK_POSTGRES_USER', 'postgres') }}"
+      password: "{{ env_var('JSTARK_POSTGRES_PASSWORD', 'postgres') }}"
+      dbname: "{{ env_var('JSTARK_POSTGRES_DATABASE', 'postgres') }}"
+      schema: "{{ env_var('JSTARK_POSTGRES_SCHEMA', 'jstark') }}"
       threads: 4
     snowflake:
       type: snowflake
-      account: "{{ env_var('SNOWFLAKE_ACCOUNT', '') }}"
-      user: "{{ env_var('SNOWFLAKE_USER', '') }}"
-      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
-      role: "{{ env_var('SNOWFLAKE_ROLE', '') }}"
-      database: "{{ env_var('SNOWFLAKE_DATABASE', '') }}"
-      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', '') }}"
-      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'jstark') }}"
+      account: "{{ env_var('JSTARK_SNOWFLAKE_ACCOUNT', '') }}"
+      user: "{{ env_var('JSTARK_SNOWFLAKE_USER', '') }}"
+      password: "{{ env_var('JSTARK_SNOWFLAKE_PASSWORD', '') }}"
+      role: "{{ env_var('JSTARK_SNOWFLAKE_ROLE', '') }}"
+      database: "{{ env_var('JSTARK_SNOWFLAKE_DATABASE', '') }}"
+      warehouse: "{{ env_var('JSTARK_SNOWFLAKE_WAREHOUSE', '') }}"
+      schema: "{{ env_var('JSTARK_SNOWFLAKE_SCHEMA', 'jstark') }}"
       threads: 4
     bigquery:
       type: bigquery
       method: service-account-json
-      project: "{{ env_var('BIGQUERY_PROJECT', '') }}"
-      dataset: "{{ env_var('BIGQUERY_DATASET', 'jstark') }}"
+      project: "{{ env_var('JSTARK_BIGQUERY_PROJECT', '') }}"
+      dataset: "{{ env_var('JSTARK_BIGQUERY_DATASET', 'jstark') }}"
       threads: 4
-      keyfile_json: "{{ env_var('BIGQUERY_KEYFILE_JSON', '{}') | fromjson }}"
+      keyfile_json: "{{ env_var('JSTARK_BIGQUERY_KEYFILE_JSON', '{}') | fromjson }}"
     databricks:
       type: databricks
       host: "{{ env_var('JSTARK_DATABRICKS_HOST', '') }}"
