@@ -35,6 +35,16 @@ jobs:
         working-directory: integration_tests
         run: uv run dbt run-operation jstark_test_suite --profiles-dir .
 
+      # The second run is not redundant: the var('jstark_as_at') rung of
+      # try_resolve_as_at can only be exercised by a run that actually sets the
+      # var, and test_context.sql asserts on that rung when one is set. Both
+      # runs make the same number of assertions.
+      - name: Layer 1 — macro logic, with jstark_as_at set
+        working-directory: integration_tests
+        run: |
+          uv run dbt run-operation jstark_test_suite --profiles-dir . \
+            --vars '{jstark_as_at: 2021-10-01}'
+
       - name: Layer 2 — generated SQL
         working-directory: integration_tests
         run: |
