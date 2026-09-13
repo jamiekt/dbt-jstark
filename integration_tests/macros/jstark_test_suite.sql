@@ -4,6 +4,7 @@
 
   {% do jstark_test_harness(results) %}
   {% do jstark_test_naming(results) %}
+  {% do jstark_test_date_math(results) %}
 
   {% if results | length == 0 %}
     {{ exceptions.raise_compiler_error('jstark L1 test suite ran no assertions at all.') }}
