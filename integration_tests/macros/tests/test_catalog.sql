@@ -112,9 +112,6 @@
       results, 'catalog SQL casts start_date',
       sql, "cast('2021-10-01' as date) as start_date"
   ) %}
-  {% do jstark_assert_contains(
-      results, 'catalog SQL names the columns', sql, 'as feature_name'
-  ) %}
 
   {# --- the catalogue covers exactly the columns the engine emits --- #}
   {% set engine_sql = jstark.mealkit_features(
@@ -135,6 +132,87 @@
   {% do jstark_assert_equal(
       results, 'catalog covers every mealkit feature',
       catalog_names | length, 10 + 13 + 1
+  ) %}
+
+  {#- a public_column_name regression that collapsed every feature_name to ''
+      would still pass the two checks above (the loop's `in` check and the
+      length count), since '' in engine_sql is true and the length is
+      unaffected by what the names actually are. These two close that hole:
+      no name is ever empty, and at least a few real mealkit names are
+      pinned by literal value rather than by membership in a list the
+      implementation just built. -#}
+  {% do jstark_assert_true(
+      results, 'no catalogued mealkit feature_name is empty',
+      '' not in catalog_names
+  ) %}
+  {% do jstark_assert_true(
+      results, 'catalog includes order_count_3m1', 'order_count_3m1' in catalog_names
+  ) %}
+  {% do jstark_assert_true(
+      results, 'catalog includes recipe_count_3m1', 'recipe_count_3m1' in catalog_names
+  ) %}
+  {% do jstark_assert_true(
+      results, 'catalog includes italian_cuisine_count_3m1',
+      'italian_cuisine_count_3m1' in catalog_names
+  ) %}
+
+  {# --- jstark.schema_yml_text: escaping --- #}
+  {#- a cuisine carrying all four characters the YAML builder must escape or
+      preserve: an apostrophe (no escaping needed in a double-quoted YAML
+      scalar), a double quote (escaped as \"), a colon (harmless once quoted)
+      and a backslash (escaped as \\, and it must happen before the quote
+      escaping step or a real backslash immediately before a real quote would
+      end up mis-paired). -#}
+  {% set hostile_cuisine = "D'Angelo's \"Grill\": N\\A" %}
+  {% set hostile_stem = hostile_cuisine ~ 'CuisineCount' %}
+  {% set schema_text = jstark.schema_yml_text(
+      model_name='mealkit_customer_features',
+      generator='mealkit',
+      as_at='2022-01-01',
+      feature_periods=['3m1'],
+      feature_stems=[hostile_stem],
+      cuisines=[hostile_cuisine]
+  ) %}
+  {% do jstark_assert_contains(
+      results, 'schema.yml escapes apostrophe, quote, colon and backslash together',
+      schema_text,
+      "        description: \"Count of D'Angelo's \\\"Grill\\\": N\\\\A recipes between 2021-10-01 and 2021-12-31\""
+  ) %}
+
+  {# --- jstark.schema_yml_text: structure --- #}
+  {% set structure_text = jstark.schema_yml_text(
+      model_name='structure_check_model',
+      generator='grocery',
+      as_at='2022-01-01',
+      feature_periods=['3m1'],
+      feature_stems=['GrossSpend'],
+      group_by=['customer']
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'schema.yml starts with the version line',
+      structure_text.split('\n')[0], 'version: 2'
+  ) %}
+  {% do jstark_assert_contains(
+      results, 'schema.yml has a models section', structure_text, '\nmodels:\n'
+  ) %}
+  {% do jstark_assert_contains(
+      results, 'schema.yml names the model', structure_text,
+      '  - name: structure_check_model'
+  ) %}
+  {% do jstark_assert_contains(
+      results, 'schema.yml opens a columns block', structure_text, '    columns:'
+  ) %}
+  {% do jstark_assert_contains(
+      results, 'schema.yml labels a group_by column',
+      structure_text, '      - name: customer\n        description: Grouping column.'
+  ) %}
+  {#- the ordering itself, not just the presence of both blocks: a caller
+      pastes this straight into a model's schema.yml, where column docs read
+      top to bottom in the order the columns are selected, group_by first. -#}
+  {% do jstark_assert_true(
+      results, 'schema.yml lists group_by columns before feature columns',
+      structure_text.index('      - name: customer')
+      < structure_text.index('      - name: gross_spend_3m1')
   ) %}
 
 {% endmacro %}
