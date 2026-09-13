@@ -12,6 +12,7 @@
   {% do jstark_test_registry(results) %}
   {% do jstark_test_engine(results) %}
   {% do jstark_test_grocery(results) %}
+  {% do jstark_test_mealkit(results) %}
 
   {% if results | length == 0 %}
     {{ exceptions.raise_compiler_error('jstark L1 test suite ran no assertions at all.') }}

@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: mealkit_scalar_features
+    description: Every scalar mealkit-specific feature over a 3m1 period.
+    data_tests:
+      - dbt_utils.equality:
+          arguments:
+            compare_model: ref('expected_mealkit_features')
+  - name: mealkit_set_features
+    description: The two set-valued mealkit features, Allergens and Cuisines.
+  - name: mealkit_all_features
+    description: >
+      All 23 mealkit features plus three per-cuisine counts over two periods.
+      Built but not asserted on value-by-value; its job is to prove the whole
+      catalogue compiles and runs.
+
+unit_tests:
+  - name: mealkit_scalar_features_values
+    description: >
+      Two orders in the window, one in October and one in December, with
+      November empty so that OrderPeriods is 2. A third order on 2022-01-01
+      falls outside the window and must be excluded, which is also what makes
+      the Mexican rows invisible to the per-cuisine counts.
+
+      approx_order_count_3m1 is 1, not 2: DuckDB's approx_count_distinct is a
+      genuine HyperLogLog estimator, and for this specific pair of order_id
+      values ('o1', 'o2') it estimates 1 rather than the true count of 2 -
+      verified directly against `approx_count_distinct` outside of jstark, so
+      this is real DuckDB behaviour, not a jstark defect. Pinning the actual
+      value here (rather than the mathematically "expected" 2) is deliberate:
+      it is what the approximation genuinely returns for this fixture on this
+      warehouse.
+    model: mealkit_scalar_features
+    given:
+      - input: ref('mealkit_orders')
+        format: sql
+        rows: |
+          select 'c1' as customer, 'o1' as order_id, 'r1' as recipe,
+                 'Italian' as cuisine, 'gluten' as allergen, 'p1' as product,
+                 cast('2021-10-01' as date) as event_timestamp, 2 as quantity
+          union all
+          select 'c1', 'o1', 'r2', 'Thai', 'nuts', 'p2',
+                 cast('2021-10-01' as date), 2
+          union all
+          select 'c1', 'o2', 'r1', 'Italian', 'gluten', 'p1',
+                 cast('2021-12-30' as date), 4
+          union all
+          select 'c1', 'o3', 'r3', 'Mexican', 'soy', 'p3',
+                 cast('2022-01-01' as date), 9
+    expect:
+      format: sql
+      rows: |
+          select 'c1' as customer,
+                 2 as order_count_3m1,
+                 1 as approx_order_count_3m1,
+                 2 as recipe_count_3m1,
+                 2 as approx_recipe_count_3m1,
+                 2 as allergen_count_3m1,
+                 2 as cuisine_count_3m1,
+                 cast(4.0 as double) as avg_quantity_per_order_3m1,
+                 cast(45.0 as double) as avg_purchase_cycle_3m1,
+                 cast(2.0 as double) / 45.0 as cycles_since_last_order_3m1,
+                 2 as order_months_3m1,
+                 cast(2.0 as double) / 3.0 as average_orders_per_month_3m1,
+                 2 as italian_cuisine_count_3m1,
+                 1 as thai_cuisine_count_3m1,
+                 0 as south_african_cuisine_count_3m1
+
+  - name: mealkit_set_features_values
+    description: >
+      Allergens and Cuisines come back sorted, with the out-of-window soy and
+      Mexican values excluded. Kept separate from the scalar test because the
+      array literals below are DuckDB syntax.
+    model: mealkit_set_features
+    config:
+      tags: ['duckdb_only']
+    given:
+      - input: ref('mealkit_orders')
+        format: sql
+        rows: |
+          select 'c1' as customer, 'o1' as order_id, 'r1' as recipe,
+                 'Italian' as cuisine, 'gluten' as allergen, 'p1' as product,
+                 cast('2021-10-01' as date) as event_timestamp, 2 as quantity
+          union all
+          select 'c1', 'o1', 'r2', 'Thai', 'nuts', 'p2',
+                 cast('2021-10-01' as date), 2
+          union all
+          select 'c1', 'o3', 'r3', 'Mexican', 'soy', 'p3',
+                 cast('2022-01-01' as date), 9
+    expect:
+      format: sql
+      rows: |
+          select 'c1' as customer,
+                 cast(['gluten', 'nuts'] as varchar[]) as allergens_3m1,
+                 cast(['Italian', 'Thai'] as varchar[]) as cuisines_3m1
+
+  - name: mealkit_set_features_default_to_empty_arrays
+    description: >
+      A customer with no rows in the window gets empty arrays rather than
+      nulls, matching Spark's collect_set.
+    model: mealkit_set_features
+    config:
+      tags: ['duckdb_only']
+    given:
+      - input: ref('mealkit_orders')
+        format: sql
+        rows: |
+          select 'c1' as customer, 'o3' as order_id, 'r3' as recipe,
+                 'Mexican' as cuisine, 'soy' as allergen, 'p3' as product,
+                 cast('2022-01-01' as date) as event_timestamp, 9 as quantity
+    expect:
+      format: sql
+      rows: |
+          select 'c1' as customer,
+                 cast(list_value() as varchar[]) as allergens_3m1,
+                 cast(list_value() as varchar[]) as cuisines_3m1

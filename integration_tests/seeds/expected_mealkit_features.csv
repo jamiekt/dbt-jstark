@@ -1,0 +1,2 @@
+customer,order_count_3m1,approx_order_count_3m1,recipe_count_3m1,approx_recipe_count_3m1,allergen_count_3m1,cuisine_count_3m1,avg_quantity_per_order_3m1,avg_purchase_cycle_3m1,cycles_since_last_order_3m1,order_months_3m1,average_orders_per_month_3m1,italian_cuisine_count_3m1,thai_cuisine_count_3m1,south_african_cuisine_count_3m1
+c1,2,1,2,2,2,2,4.0,45.0,0.044444444444444446,2,0.6666666666666666,2,1,0

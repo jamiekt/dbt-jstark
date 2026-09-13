@@ -1,0 +1,5 @@
+customer,order_id,recipe,cuisine,allergen,product,event_timestamp,quantity,discount
+c1,o1,r1,Italian,gluten,p1,2021-10-01,2,0.0
+c1,o1,r2,Thai,nuts,p2,2021-10-01,2,0.0
+c1,o2,r1,Italian,gluten,p1,2021-12-30,4,0.0
+c1,o3,r3,Mexican,soy,p3,2022-01-01,9,0.0
