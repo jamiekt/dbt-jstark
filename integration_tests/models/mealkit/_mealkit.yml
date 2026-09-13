@@ -23,37 +23,44 @@ unit_tests:
       falls outside the window and must be excluded, which is also what makes
       the Mexican rows invisible to the per-cuisine counts.
 
-      approx_order_count_3m1 is 1, not 2: DuckDB's approx_count_distinct is a
-      genuine HyperLogLog estimator, and for this specific pair of order_id
-      values ('o1', 'o2') it estimates 1 rather than the true count of 2 -
-      verified directly against `approx_count_distinct` outside of jstark, so
-      this is real DuckDB behaviour, not a jstark defect. Pinning the actual
-      value here (rather than the mathematically "expected" 2) is deliberate:
-      it is what the approximation genuinely returns for this fixture on this
-      warehouse.
+      The order_id values (ord1, ord2, ord3) are chosen deliberately, not
+      arbitrarily: DuckDB's approx_count_distinct is a genuine HyperLogLog
+      estimator, and for some pairs of short strings the sketch collides and
+      under-counts. 'o1'/'o2' specifically collide and estimate 1 rather than
+      the true distinct count of 2 - verified directly against
+      approx_count_distinct outside of jstark. 'ord1'/'ord2'/'ord3' do not
+      collide and estimate exactly 2, which is the only thing worth asserting
+      about an Approx* feature: that the approximation approximates the exact
+      count. This matters beyond DuckDB because this unit test is not tagged
+      duckdb_only - Postgres's approx_count_distinct (see
+      postgres__jstark_approx_count_distinct) has no HyperLogLog and falls
+      back to an exact count(distinct ...), so the expectation must hold
+      exactly on Postgres too. Do not change these order_id values back to
+      short single-digit forms without re-verifying approx_count_distinct's
+      estimate on every warehouse this test runs against.
     model: mealkit_scalar_features
     given:
       - input: ref('mealkit_orders')
         format: sql
         rows: |
-          select 'c1' as customer, 'o1' as order_id, 'r1' as recipe,
+          select 'c1' as customer, 'ord1' as order_id, 'r1' as recipe,
                  'Italian' as cuisine, 'gluten' as allergen, 'p1' as product,
                  cast('2021-10-01' as date) as event_timestamp, 2 as quantity
           union all
-          select 'c1', 'o1', 'r2', 'Thai', 'nuts', 'p2',
+          select 'c1', 'ord1', 'r2', 'Thai', 'nuts', 'p2',
                  cast('2021-10-01' as date), 2
           union all
-          select 'c1', 'o2', 'r1', 'Italian', 'gluten', 'p1',
+          select 'c1', 'ord2', 'r1', 'Italian', 'gluten', 'p1',
                  cast('2021-12-30' as date), 4
           union all
-          select 'c1', 'o3', 'r3', 'Mexican', 'soy', 'p3',
+          select 'c1', 'ord3', 'r3', 'Mexican', 'soy', 'p3',
                  cast('2022-01-01' as date), 9
     expect:
       format: sql
       rows: |
           select 'c1' as customer,
                  2 as order_count_3m1,
-                 1 as approx_order_count_3m1,
+                 2 as approx_order_count_3m1,
                  2 as recipe_count_3m1,
                  2 as approx_recipe_count_3m1,
                  2 as allergen_count_3m1,
@@ -79,14 +86,14 @@ unit_tests:
       - input: ref('mealkit_orders')
         format: sql
         rows: |
-          select 'c1' as customer, 'o1' as order_id, 'r1' as recipe,
+          select 'c1' as customer, 'ord1' as order_id, 'r1' as recipe,
                  'Italian' as cuisine, 'gluten' as allergen, 'p1' as product,
                  cast('2021-10-01' as date) as event_timestamp, 2 as quantity
           union all
-          select 'c1', 'o1', 'r2', 'Thai', 'nuts', 'p2',
+          select 'c1', 'ord1', 'r2', 'Thai', 'nuts', 'p2',
                  cast('2021-10-01' as date), 2
           union all
-          select 'c1', 'o3', 'r3', 'Mexican', 'soy', 'p3',
+          select 'c1', 'ord3', 'r3', 'Mexican', 'soy', 'p3',
                  cast('2022-01-01' as date), 9
     expect:
       format: sql
@@ -106,7 +113,7 @@ unit_tests:
       - input: ref('mealkit_orders')
         format: sql
         rows: |
-          select 'c1' as customer, 'o3' as order_id, 'r3' as recipe,
+          select 'c1' as customer, 'ord3' as order_id, 'r3' as recipe,
                  'Mexican' as cuisine, 'soy' as allergen, 'p3' as product,
                  cast('2022-01-01' as date) as event_timestamp, 9 as quantity
     expect:
