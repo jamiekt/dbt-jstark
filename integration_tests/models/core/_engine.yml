@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: engine_shape
+    description: >
+      Exercises the engine end to end against the test generator: a base sum,
+      a base distinct count, and a derived feature over both.
+
+unit_tests:
+  - name: engine_shape_respects_the_window
+    description: >
+      Rows on the window boundaries are included and rows one day outside are
+      excluded, at both ends.
+    model: engine_shape
+    given:
+      - input: ref('jstark_test_input')
+        format: sql
+        rows: |
+          select 'c1' as customer, 's1' as store, 'b1' as basket,
+                 cast('2021-11-15' as date) as event_timestamp,
+                 cast(10.0 as double) as gross_spend
+          union all
+          select 'c1', 's1', 'b1', cast('2021-11-15' as date), cast(5.0 as double)
+          union all
+          select 'c1', 's1', 'b2', cast('2021-12-31' as date), cast(20.0 as double)
+          union all
+          select 'c1', 's1', 'b3', cast('2022-01-01' as date), cast(99.0 as double)
+          union all
+          select 'c2', 's2', 'b4', cast('2021-10-01' as date), cast(7.5 as double)
+          union all
+          select 'c2', 's2', 'b5', cast('2021-09-30' as date), cast(99.0 as double)
+    expect:
+      format: sql
+      rows: |
+          select 'c1' as customer,
+                 cast(35.0 as double) as test_spend_3m1,
+                 2 as test_basket_count_3m1,
+                 cast(17.5 as double) as test_spend_per_basket_3m1
+          union all
+          select 'c2', cast(7.5 as double), 1, cast(7.5 as double)
+
+  - name: engine_shape_defaults_when_the_window_is_empty
+    description: >
+      A group with no rows in the window falls back to each feature's default:
+      0.0 for the sum, 0 for the count, and null for the derived feature,
+      whose denominator is zero.
+    model: engine_shape
+    given:
+      - input: ref('jstark_test_input')
+        format: sql
+        rows: |
+          select 'c9' as customer, 's1' as store, 'b9' as basket,
+                 cast('2020-01-01' as date) as event_timestamp,
+                 cast(42.0 as double) as gross_spend
+    expect:
+      format: sql
+      rows: |
+          select 'c9' as customer,
+                 cast(0.0 as double) as test_spend_3m1,
+                 0 as test_basket_count_3m1,
+                 cast(null as double) as test_spend_per_basket_3m1
