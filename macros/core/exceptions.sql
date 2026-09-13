@@ -13,7 +13,8 @@
       'feature_not_found': 'feature_not_found',
       'unknown_column_map_key': 'unknown_column_map_key',
       'invalid_first_day_of_week': 'invalid_first_day_of_week',
-      'unknown_aggregator': 'unknown_aggregator'
+      'unknown_aggregator': 'unknown_aggregator',
+      'as_at_is_not_a_date': 'as_at_is_not_a_date'
   }) }}
 {% endmacro %}
 
