@@ -313,7 +313,7 @@ dbt-core's cross-database macros or through adapter dispatch.
 | Postgres | Tested nightly against a service container. `ApproxCustomerCount` and friends fall back to exact counts and warn, because Postgres has no approximate distinct count. |
 | Snowflake | Adapter macros written from the documentation, not yet run against a real warehouse. Tested nightly once credentials are configured. |
 | BigQuery | Adapter macros written from the documentation, not yet run against a real warehouse. Tested nightly once credentials are configured. |
-| Databricks | **Not yet supported.** It has a profile target and a nightly job, but no `databricks__` adapter macros, so `collect_set` and the empty-array default still emit DuckDB and ANSI syntax Spark SQL does not accept. Two macros away; see `CONTRIBUTING.md`. |
+| Databricks | **Not yet supported.** It has a profile target and a nightly job, but no `databricks__` adapter macros, so `collect_set` and the empty-array default still emit DuckDB and ANSI syntax Spark SQL does not accept. `collect_set` and the empty-string-array default are known to need overrides; whether the double-precision cast also does has not been checked against a running cluster. See `CONTRIBUTING.md`. |
 | Redshift | Partial: the approximate-distinct-count fallback exists, the rest is untested. |
 
 Adding an adapter means implementing at most five macros; see `CONTRIBUTING.md`.
@@ -418,14 +418,22 @@ case-insensitive on both sides in both implementations — `lower(cuisine) =
 'italian'` here, `f.lower(f.col("Cuisine")) == CUISINE_NAME.lower()` in
 `cuisine_count.py`. So `cuisines=['Italian']` matches data stored as `italian`,
 and the casing you pass does not have to line up with the casing in your data.
-The casing you pass *does* decide the feature's stem and its description
+
+The casing you pass *always* decides the feature's stem and its description
 text — `cuisines=['Italian']` and `cuisines=['italian']` match the same rows
 but register as `ItalianCuisineCount` versus `italianCuisineCount`, and
 describe themselves as "Count of Italian recipes" versus "Count of italian
-recipes". The generated **column name** is unaffected either way
-(`italian_cuisine_count_13w0` in both cases), because column names are
-lowercased regardless of the stem's casing. This is the part that surprises
-people.
+recipes". Whether it also changes the **column name** depends on whether the
+casing introduces a word boundary. Column names go through
+`jstark.snake_case()`, which lowercases *and* inserts an underscore wherever a
+lowercase letter is followed by an uppercase one. A single-word cuisine has no
+such boundary to introduce, so `cuisines=['Italian']` and
+`cuisines=['italian']` produce the same column, `italian_cuisine_count_13w0`.
+A multi-word cuisine does: `cuisines=['TexMex']` produces
+`tex_mex_cuisine_count_13w0`, but `cuisines=['texmex']` — no internal
+capital, so no boundary — produces `texmex_cuisine_count_13w0`. Both compare
+against `lower(cuisine) = 'texmex'`, so the two columns count the same rows
+under different names. This is the part that surprises people.
 
 ## License
 

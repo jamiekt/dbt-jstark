@@ -124,8 +124,13 @@ warehouse; verifying them is a genuinely useful contribution.
 Databricks is the clearest gap: it has a profile target and a nightly job but no
 `databricks__` macros at all, so it falls through to `default__`, which emits
 `list_sort(...)` and `cast(array[] as text[])` — neither of which is Spark SQL.
-Implementing `databricks__jstark_collect_set` and
-`databricks__jstark_empty_string_array` is probably the whole job.
+`databricks__jstark_collect_set` and `databricks__jstark_empty_string_array`
+are known to be needed. Whether `databricks__jstark_double_type` is also
+needed depends on whether Spark SQL accepts `double precision` as a type
+name (the `default__` value every other adapter without an override
+inherits) — that has not been checked against a running cluster, so do not
+assume the two macros above are the whole job until someone has run this
+against Databricks and found out.
 
 ## Things to know before you edit the macros
 
