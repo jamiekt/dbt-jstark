@@ -25,11 +25,13 @@
     {% do terms.append('case when ' ~ column ~ ' > 0 then 1 else 0 end') %}
     {% do deps.append([activity_stem, sub]) %}
   {% endfor %}
-  {#- CONTROLLER RULING: jstark's own commentary for this feature
-      (order_periods.py:48) says "at least one basket was purchased" - a
-      copy-paste from BasketPeriods. Its description_subject correctly says
-      "order was placed", so the commentary here is reproduced with that
-      correction rather than jstark's verbatim (wrong) text. -#}
+  {#- One deliberate departure from jstark's wording. jstark's commentary for
+      this feature (order_periods.py:50) says "at least one basket was
+      purchased" - a copy-paste from the grocery BasketPeriods feature, and
+      contradicted by its own description_subject seven lines above, which
+      correctly says "order was placed". Reproducing a self-contradiction
+      verbatim buys nothing, so the commentary below carries the correction.
+      Everywhere else, description and commentary text is verbatim from jstark. -#}
   {% do definitions.update({'OrderPeriods': {
       'stem': 'OrderPeriods',
       'kind': 'derived',

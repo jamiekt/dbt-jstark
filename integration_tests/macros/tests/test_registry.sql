@@ -284,16 +284,18 @@
       results, 'Discount default', core_cat['Discount']['default'], '0.0'
   ) %}
 
-  {#- CONTROLLER CORRECTION (do not restore the original): the brief here
-      originally asserted core_cat['RecencyDays']['expression'] equalled a
-      dbt.datediff(...) call with the same three arguments the implementation
-      passes. That is tautological — reversing the argument order changes both
-      sides identically, so the assertion passes while every recency value comes
-      out negative. It cannot be repaired by pinning a literal string either,
-      because dbt.datediff renders differently per adapter and this suite must
-      pass on BigQuery too. The direction is instead pinned by the L2 unit test
-      core_features_values, which expects recency_days_3m1 = 1; a reversal makes
-      it -1. Assert only what is adapter-independent here. -#}
+  {#- Do NOT "strengthen" this by asserting that
+      core_cat['RecencyDays']['expression'] equals a dbt.datediff(...) call
+      built with the same three arguments the implementation passes. That is
+      tautological: reversing the argument order changes both sides identically,
+      so the assertion still passes while every recency value comes out
+      negative. Pinning a literal string instead does not work either, because
+      dbt.datediff renders differently per adapter and this suite must pass on
+      BigQuery too.
+
+      The argument direction is pinned where it is observable: the L2 unit test
+      core_features_values expects recency_days_3m1 = 1, and a reversal makes it
+      -1. Assert only what is adapter-independent here. -#}
   {% do jstark_assert_true(
       results, 'RecencyDays expression mentions as_at, not just the event date',
       "date '2022-01-01'" in core_cat['RecencyDays']['expression']

@@ -125,12 +125,11 @@
       jstark.undeclared_dependencies(full_plan), []
   ) %}
 
-  {#- CONTROLLER CORRECTION: the brief wrapped this assertion in
-      `{% if target.type == 'duckdb' %}`. Dropped. Both sides render through
-      whichever adapter is active, so the comparison is adapter-independent —
-      and the guard would have made the suite's assertion count differ between
-      warehouses, which defeats the count as a coverage check on the BigQuery
-      job Task 14 adds. -#}
+  {#- deliberately not wrapped in a `{% if target.type == 'duckdb' %}` guard.
+      Both sides render through whichever adapter is active, so the comparison
+      is adapter-independent; and a guard would make this suite's assertion
+      count differ between warehouses, which defeats the printed count as a
+      coverage check in the .github/workflows/warehouses.yml matrix. -#}
   {% do jstark_assert_equal(
       results, 'grocery_features delegates to generate_features',
       jstark_normalise_sql(jstark.grocery_features(

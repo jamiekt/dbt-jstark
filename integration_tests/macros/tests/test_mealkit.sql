@@ -75,8 +75,12 @@
   {# --- AvgOrder divides distinct orders by the number of whole periods --- #}
   {#- the expected value is a literal, not jstark.safe_divide(...): building it
       with the same macro the implementation calls would let a change in
-      safe_divide's own output pass unnoticed here. `order_count_3m1`, NOT
-      `count_3m1` --- see CONTROLLER NOTE 4 in Step 1. -#}
+      safe_divide's own output pass unnoticed here.
+
+      `order_count_3m1`, NOT `count_3m1`. jstark's AverageOrder divides by
+      OrderCount (average_order.py), so this averages distinct orders, not
+      input rows. The two differ whenever an order spans several recipe lines,
+      which the mealkit_orders fixture is built to exercise. -#}
   {% do jstark_assert_equal(
       results, 'AvgOrder divides distinct orders, not rows',
       cat['AvgOrder']['expression'],
@@ -176,11 +180,11 @@
       jstark.undeclared_dependencies(full_plan), []
   ) %}
 
-  {#- CONTROLLER CORRECTION: dropped the `{% if target.type == 'duckdb' %}`
-      guard the brief wrapped this in. Both sides render through whichever
-      adapter is active, so the comparison is adapter-independent, and the guard
-      would make the suite's assertion count differ per warehouse --- which
-      defeats the count as a coverage check on the BigQuery job Task 14 adds. -#}
+  {#- deliberately not wrapped in a `{% if target.type == 'duckdb' %}` guard.
+      Both sides render through whichever adapter is active, so the comparison
+      is adapter-independent; and a guard would make this suite's assertion
+      count differ between warehouses, which defeats the printed count as a
+      coverage check in the .github/workflows/warehouses.yml matrix. -#}
   {% do jstark_assert_equal(
       results, 'mealkit_features delegates to generate_features',
       jstark_normalise_sql(jstark.mealkit_features(

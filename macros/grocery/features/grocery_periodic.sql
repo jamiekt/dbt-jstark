@@ -22,7 +22,9 @@
   {% set n = period['number_of_periods'] %}
 
   {#- BasketPeriods: how many whole units saw at least one basket.
-      jstark tests BasketCount at each sub-period, not Count; see Step 1. -#}
+      jstark tests BasketCount at each sub-period, not Count (basket_periods.py),
+      so a unit counts as active only if a distinct basket falls in it - not
+      merely a row. The two differ whenever a basket spans several rows. -#}
   {% set activity_stem = 'BasketCount' %}
   {% set terms = [] %}
   {% set deps = [] %}
