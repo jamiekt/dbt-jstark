@@ -30,7 +30,18 @@
 
 
 {% macro jstark_assert_contains(results, label, haystack, needle) %}
-  {% if needle not in haystack %}
+  {#- `'' in anything` is true in Jinja, so an empty needle would make this
+      assertion pass whatever the haystack contains. An empty needle is always a
+      bug in the caller — usually a value that was built from something that
+      came out empty — so it fails rather than passing vacuously. -#}
+  {% if needle == '' %}
+    {% do results.append({
+        'ok': false,
+        'label': label,
+        'message': label ~ ': the needle is empty, so this assertion would pass '
+                   ~ 'against any haystack; assert on a real value'
+    }) %}
+  {% elif needle not in haystack %}
     {% do results.append({
         'ok': false,
         'label': label,
