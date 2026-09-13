@@ -42,6 +42,45 @@
       cat['TestSpendPerBasket']['kind'], 'derived'
   ) %}
 
+  {# --- no two stems in a catalogue may reduce to one column name --- #}
+  {#- the guard every generator's catalogue passes through, so a stem that
+      collides with another stem can never reach the emitted SQL, whatever
+      registered it. Exercised on a hand-built pair rather than on a real
+      catalogue: a real one is expected to be clean, which is what the
+      following assertion checks. -#}
+  {% set clashing = jstark.try_unique_column_names(
+      {'BasketCount': {}, 'Basket_Count': {}}, jstark.parse_feature_period('3m1')
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'colliding stems are rejected', clashing['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'colliding stems name both stems and the column',
+      clashing['error'],
+      'jstark: duplicate_column_name: two feature stems reduce to one column '
+      ~ "name: 'BasketCount' and 'Basket_Count' both produce the column "
+      ~ 'basket_count_3m1'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'distinct stems are accepted',
+      jstark.try_unique_column_names(
+          {'BasketCount': {}, 'OrderCount': {}},
+          jstark.parse_feature_period('3m1')
+      ),
+      {'ok': true, 'error': none}
+  ) %}
+  {#- and the real catalogues are clean, or the guard would be raising on every
+      compile rather than only on a defect -#}
+  {% for generator in ['core', 'grocery', 'mealkit', 'test'] %}
+    {% do jstark_assert_equal(
+        results, generator ~ ' catalogue has no colliding column names',
+        jstark.try_unique_column_names(
+            jstark.catalogue(generator, ctx), ctx['period']
+        )['ok'],
+        true
+    ) %}
+  {% endfor %}
+
   {# --- generators are enumerated in one place --- #}
   {% do jstark_assert_equal(
       results, 'generators()',
@@ -351,8 +390,10 @@
       ~ 'features is most useful to you.'
   ) %}
 
-  {#- Mandated by the Task 9 ruling: every generator's full catalogue must have
-      this assertion, or the guard is unarmed for that generator. Core is all
+  {#- Required by the contract stated in jstark.undeclared_dependencies
+      (macros/core/registry.sql): it is deliberately not called on every
+      compile, so every generator's full catalogue must have this assertion, or
+      the guard is unarmed for that generator. Core is all
       base features today, so it has nothing to find; it is asserted anyway so
       the coverage exists the moment a derived core feature is added. -#}
   {% do jstark_assert_equal(

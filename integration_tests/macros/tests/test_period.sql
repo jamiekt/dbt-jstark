@@ -91,6 +91,58 @@
       ['3m1', '0d0', '1y1']
   ) %}
 
+  {# --- a repeated feature period is rejected, not deduplicated --- #}
+  {#- before this guard feature_periods=['1m1','1m1'] emitted every feature
+      column twice; DuckDB renamed the second to <name>_1 and nothing warned -#}
+  {% set repeated = jstark.try_parse_feature_periods(['1m1', '1m1']) %}
+  {% do jstark_assert_equal(
+      results, "feature_periods=['1m1','1m1'] is rejected", repeated['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, "feature_periods=['1m1','1m1'] error", repeated['error'],
+      "jstark: duplicate_column_name: feature_periods asks for the period '1m1' "
+      ~ 'more than once (entries 1m1 and 1m1), which would emit every feature '
+      ~ 'column twice under one name'
+  ) %}
+  {#- keyed on the parsed mnemonic, not on the caller's text, so two spellings
+      of one window collide too: 'm' and '0m0' and the dict form all parse to
+      0m0 -#}
+  {% set respelled = jstark.try_parse_feature_periods(['m', '0m0']) %}
+  {% do jstark_assert_equal(
+      results, "feature_periods=['m','0m0'] is rejected", respelled['ok'], false
+  ) %}
+  {% do jstark_assert_contains(
+      results, "feature_periods=['m','0m0'] names both entries",
+      respelled['error'], '(entries m and 0m0)'
+  ) %}
+  {% set dict_repeat = jstark.try_parse_feature_periods(
+      ['1y1', {'unit': 'y', 'start': 1, 'end': 1}]
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'a dict period repeating a mnemonic is rejected',
+      dict_repeat['ok'], false
+  ) %}
+  {#- and distinct periods still pass, so the guard is not simply rejecting
+      every list of more than one -#}
+  {% set distinct_periods = jstark.try_parse_feature_periods(['1m1', '2m2']) %}
+  {% do jstark_assert_equal(
+      results, 'distinct feature periods are accepted', distinct_periods['ok'], true
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'distinct feature periods are returned in order',
+      distinct_periods['periods'] | map(attribute='mnemonic') | list,
+      ['1m1', '2m2']
+  ) %}
+  {#- a per-entry parse failure still comes through the list-level parser -#}
+  {% set bad_entry = jstark.try_parse_feature_periods(['1m1', 'nonsense']) %}
+  {% do jstark_assert_equal(
+      results, 'a bad entry fails the whole list', bad_entry['ok'], false
+  ) %}
+  {% do jstark_assert_contains(
+      results, 'a bad entry reports the mnemonic error',
+      bad_entry['error'], 'feature_period_mnemonic_is_invalid'
+  ) %}
+
   {# --- period_bounds. Values cross-checked against jstark at 51d9083. --- #}
   {% set bound_cases = [
       ['3m1',  d(2022, 1, 1),  'Monday', d(2021, 10, 1), d(2021, 12, 31)],

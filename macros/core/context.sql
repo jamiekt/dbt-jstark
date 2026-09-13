@@ -44,6 +44,16 @@
       expression here surfaces as a syntax error from the warehouse. That is
       an acceptable trade: column_map is written by whoever writes the model,
       who can already put arbitrary SQL in it.
+
+      Deliberately laxer than try_resolve_group_by, which requires a bare
+      identifier. The difference is where the value lands: a column_map value
+      only ever appears inside an aggregate or a window predicate, where an
+      expression is well-formed and names nothing, whereas a group_by entry has
+      to survive being re-emitted against a CTE by name. An expression
+      column_map works today, and integration_tests/macros/tests/test_engine.sql
+      asserts that it reaches the emitted aggregate; an expression group_by
+      cannot be made to work without projecting an alias, which is a design
+      change rather than a validation change.
     #}
     {% set value = overrides[key] %}
     {% if not (value is string and value | trim != '') %}
@@ -74,6 +84,72 @@
     {{ exceptions.raise_compiler_error(result['error']) }}
   {% endif %}
   {{ return(result['cols']) }}
+{% endmacro %}
+
+
+{% macro try_resolve_group_by(group_by) %}
+  {#
+    Validate the grouping columns.
+
+    Each entry is emitted twice — once in the base CTE's select list and once in
+    its GROUP BY — and then re-emitted in the final projection against the CTE
+    (macros/core/generate_features.sql). That last step is what rules out
+    expressions: `date_trunc('month', event_timestamp)` selects fine in the base
+    CTE but is nameless there, so re-emitting the same text against the CTE
+    looks for a raw column the CTE does not have. Its comma also splits the
+    select list in two. So an entry must be a bare identifier, and a caller who
+    wants a derived grouping column computes it in the SQL passed as `input` and
+    names the resulting column here.
+
+    A repeat is rejected rather than deduplicated, for the reason in
+    try_parse_feature_periods: two columns cannot share one name, and DuckDB
+    silently renames the second to <name>_1. The comparison folds case because
+    an unquoted identifier is case-insensitive on every warehouse targeted here,
+    so `['customer', 'CUSTOMER']` is the same column twice.
+
+    Returns: {'ok', 'error', 'columns'}.
+  #}
+  {% set entries = group_by if group_by else [] %}
+  {% set columns = [] %}
+  {% set seen = {} %}
+  {% set problems = [] %}
+
+  {% for entry in entries %}
+    {% if not (entry is string
+               and modules.re.match('^[A-Za-z_][A-Za-z0-9_]*$', entry)) %}
+      {% do problems.append(jstark.error_message(
+          jstark.error_codes()['invalid_group_by'],
+          "group_by entry '" ~ (entry | string) ~ "' is not a column name. "
+          ~ 'group_by takes bare column names, not expressions: compute a '
+          ~ 'derived grouping column in the SQL you pass as `input` and name '
+          ~ 'that column here'
+      )) %}
+    {% elif (entry | lower) in seen %}
+      {% do problems.append(jstark.error_message(
+          jstark.error_codes()['duplicate_column_name'],
+          "group_by asks for the column '" ~ entry ~ "' more than once (entries "
+          ~ seen[entry | lower] ~ ' and ' ~ entry
+          ~ '), which would emit two grouping columns with one name'
+      )) %}
+    {% else %}
+      {% do seen.update({(entry | lower): entry}) %}
+      {% do columns.append(entry) %}
+    {% endif %}
+  {% endfor %}
+
+  {% if problems | length > 0 %}
+    {{ return({'ok': false, 'error': problems[0], 'columns': none}) }}
+  {% endif %}
+  {{ return({'ok': true, 'error': none, 'columns': columns}) }}
+{% endmacro %}
+
+
+{% macro resolve_group_by(group_by) %}
+  {% set result = jstark.try_resolve_group_by(group_by) %}
+  {% if not result['ok'] %}
+    {{ exceptions.raise_compiler_error(result['error']) }}
+  {% endif %}
+  {{ return(result['columns']) }}
 {% endmacro %}
 
 

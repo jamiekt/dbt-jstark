@@ -29,6 +29,7 @@
 
   {% if generator == 'test' %}
     {% do jstark.register_test_features(definitions, ctx) %}
+    {% do jstark.check_unique_column_names(definitions, ctx['period']) %}
     {{ return(definitions) }}
   {% endif %}
 
@@ -40,7 +41,9 @@
     ) %}
   {% endif %}
 
-  {#- Tasks 10-12 replace this branch body with real registrations. -#}
+  {#- core first: the industry generators add to what core registered, and
+      mealkit's per-cuisine features need the rest of the catalogue in place
+      before they can tell whether a cuisine collides with it -#}
   {% do jstark.register_core_features(definitions, ctx, generator) %}
   {% if generator == 'grocery' %}
     {% do jstark.register_grocery_features(definitions, ctx) %}
@@ -48,7 +51,63 @@
     {% do jstark.register_mealkit_features(definitions, ctx) %}
   {% endif %}
 
+  {% do jstark.check_unique_column_names(definitions, ctx['period']) %}
   {{ return(definitions) }}
+{% endmacro %}
+
+
+{% macro try_unique_column_names(definitions, feature_period) %}
+  {#
+    No two stems in a catalogue may reduce to one column name.
+
+    definitions is keyed by stem, but the emitted SQL is keyed by column name
+    (see column_name in macros/core/naming.sql, which dependency_key below
+    reuses verbatim). Two stems sharing a column name is therefore always a
+    defect: the base CTE would carry the same alias twice, and which one the
+    warehouse resolved a later reference to would be its choice, not ours.
+    DuckDB renames the second to <name>_1 and says nothing.
+
+    Every generator's catalogue goes through jstark.catalogue, which is why the
+    check lives here rather than in the generator that happens to be able to
+    produce a collision from user input (mealkit's cuisines; see
+    macros/mealkit/features/mealkit_cuisines.sql, which catches it earlier and
+    with a better message).
+
+    Returns: {'ok', 'error'}.
+  #}
+  {% set owner = {} %}
+  {% set clashes = [] %}
+  {% for stem in definitions %}
+    {% set column = jstark.column_name(stem, feature_period) %}
+    {% if column in owner %}
+      {% do clashes.append(
+          "'" ~ owner[column] ~ "' and '" ~ stem ~ "' both produce the column "
+          ~ column
+      ) %}
+    {% else %}
+      {% do owner.update({column: stem}) %}
+    {% endif %}
+  {% endfor %}
+
+  {% if clashes | length > 0 %}
+    {{ return({
+        'ok': false,
+        'error': jstark.error_message(
+            jstark.error_codes()['duplicate_column_name'],
+            'two feature stems reduce to one column name: '
+            ~ (clashes | join('; '))
+        )
+    }) }}
+  {% endif %}
+  {{ return({'ok': true, 'error': none}) }}
+{% endmacro %}
+
+
+{% macro check_unique_column_names(definitions, feature_period) %}
+  {% set result = jstark.try_unique_column_names(definitions, feature_period) %}
+  {% if not result['ok'] %}
+    {{ exceptions.raise_compiler_error(result['error']) }}
+  {% endif %}
 {% endmacro %}
 
 

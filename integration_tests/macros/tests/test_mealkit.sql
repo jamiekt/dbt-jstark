@@ -180,11 +180,11 @@
       jstark.undeclared_dependencies(full_plan), []
   ) %}
 
-  {#- deliberately not wrapped in a `{% if target.type == 'duckdb' %}` guard.
-      Both sides render through whichever adapter is active, so the comparison
-      is adapter-independent; and a guard would make this suite's assertion
-      count differ between warehouses, which defeats the printed count as a
-      coverage check in the .github/workflows/warehouses.yml matrix. -#}
+  {#- deliberately not wrapped in a `{% if target.type == 'duckdb' %}` guard,
+      unlike the string-pinning assertions in test_adapters.sql. Both sides of
+      this comparison render through whichever adapter is active, so it asserts
+      that the entry point delegates rather than asserting any warehouse's SQL
+      text, and it is therefore correct on every adapter. -#}
   {% do jstark_assert_equal(
       results, 'mealkit_features delegates to generate_features',
       jstark_normalise_sql(jstark.mealkit_features(
@@ -242,6 +242,114 @@
       ~ 'this feature will have many recipes for the same cuisine, this '
       ~ 'feature allows you to determine how many Italian recipes have been '
       ~ 'ordered.'
+  ) %}
+
+  {# --- a cuisine that cannot become its own column is rejected --- #}
+  {#- `cuisines` is the only parameter whose values become identifiers, so it is
+      the only place a caller can name a column. Each case below produced a
+      wrong catalogue silently before the validation existed: the empty string
+      replaced the CuisineCount feature with a count_if under CuisineCount's own
+      column name, '-' collided with it, and two spellings of one cuisine
+      produced a single column where the caller asked for two. The base
+      catalogue is passed in so the messages can name what a cuisine collides
+      with. -#}
+  {% set base_cat = jstark.catalogue('mealkit', jstark.feature_context(
+      jstark.parse_feature_period('3m1'), as_at, 'Monday', false, cols, []
+  )) %}
+  {% set period = jstark.parse_feature_period('3m1') %}
+
+  {#- the shape that ships: no cuisines at all is valid, and CuisineCount is
+      still the distinct count it documents -#}
+  {% do jstark_assert_equal(
+      results, 'no cuisines is valid',
+      jstark.try_validate_cuisines([], base_cat, period),
+      {'ok': true, 'error': none}
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'CuisineCount is still a distinct count when cuisines is empty',
+      base_cat['CuisineCount']['aggregator'], 'count_distinct'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'three distinct cuisines are valid',
+      jstark.try_validate_cuisines(
+          ['Italian', 'Thai', 'South African'], base_cat, period
+      ),
+      {'ok': true, 'error': none}
+  ) %}
+
+  {% set empty_cuisine = jstark.try_validate_cuisines([''], base_cat, period) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=[''] is rejected", empty_cuisine['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=[''] error", empty_cuisine['error'],
+      "jstark: invalid_cuisine: cuisines entry '' is empty or whitespace only; "
+      ~ 'every entry must be a non-empty string naming a cuisine'
+  ) %}
+
+  {% set blank_cuisine = jstark.try_validate_cuisines(['  '], base_cat, period) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['  '] is rejected", blank_cuisine['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['  '] error", blank_cuisine['error'],
+      "jstark: invalid_cuisine: cuisines entry '  ' is empty or whitespace "
+      ~ 'only; every entry must be a non-empty string naming a cuisine'
+  ) %}
+
+  {% set none_cuisine = jstark.try_validate_cuisines([none], base_cat, period) %}
+  {% do jstark_assert_equal(
+      results, 'cuisines=[none] is rejected', none_cuisine['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'cuisines=[none] error', none_cuisine['error'],
+      'jstark: invalid_cuisine: cuisines entry None is not a string; every '
+      ~ 'entry must be a non-empty string naming a cuisine'
+  ) %}
+
+  {#- '-CuisineCount' is not a stem in the catalogue, but its column name is
+      CuisineCount's, which is why the check is on the column and not the stem -#}
+  {% set hyphen_cuisine = jstark.try_validate_cuisines(['-'], base_cat, period) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['-'] is rejected", hyphen_cuisine['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['-'] error", hyphen_cuisine['error'],
+      "jstark: duplicate_column_name: cuisines entry '-' produces the column "
+      ~ 'cuisine_count_3m1, which is already taken by the CuisineCount feature. '
+      ~ 'Two columns cannot share one name, so rename or drop one of them'
+  ) %}
+  {% do jstark_assert_true(
+      results, "cuisines=['-'] names a stem the catalogue does not have",
+      '-CuisineCount' not in base_cat
+  ) %}
+
+  {% set cased_cuisines = jstark.try_validate_cuisines(
+      ['Italian', 'italian'], base_cat, period
+  ) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['Italian','italian'] is rejected",
+      cased_cuisines['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['Italian','italian'] error", cased_cuisines['error'],
+      "jstark: duplicate_column_name: cuisines entry 'italian' produces the "
+      ~ 'column italian_cuisine_count_3m1, which is already taken by cuisines '
+      ~ "entry 'Italian'. Two columns cannot share one name, so rename or drop "
+      ~ 'one of them'
+  ) %}
+
+  {#- the originally-reported pair, kept as its own case: punctuation, not
+      casing, is what makes these two collide -#}
+  {% set texmex = jstark.try_validate_cuisines(
+      ['TexMex', 'Tex-Mex'], base_cat, period
+  ) %}
+  {% do jstark_assert_equal(
+      results, "cuisines=['TexMex','Tex-Mex'] is rejected", texmex['ok'], false
+  ) %}
+  {% do jstark_assert_contains(
+      results, "cuisines=['TexMex','Tex-Mex'] names the shared column",
+      texmex['error'], 'tex_mex_cuisine_count_3m1'
   ) %}
 
 {% endmacro %}

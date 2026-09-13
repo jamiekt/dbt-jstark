@@ -30,7 +30,91 @@
   emitted SQL stays valid, via jstark.sql_string() (macros/core/feature_catalog.sql).
 #}
 
+{% macro try_validate_cuisines(cuisines, definitions, feature_period) %}
+  {#
+    The boundary where a caller-supplied string becomes a SQL identifier.
+
+    Everything a cuisine ends up naming is derived from the cuisine itself, so
+    two cuisines, or a cuisine and an existing feature, can reduce to one column
+    name. That is not recoverable: the caller asked for two columns and only one
+    can exist, so it is reported rather than deduplicated. Three shapes reach
+    here, all of them plausible inputs:
+
+      ['']                  -> stem 'CuisineCount', which is the mealkit
+                               distinct-count feature's own stem, so registering
+                               it would replace a documented feature with a
+                               count_if under the same name
+      ['-']                 -> stem '-CuisineCount', a different stem that
+                               snake_cases to the same column as CuisineCount
+      ['Italian','italian'] -> two stems, one column
+
+    Note the second shape is why the check is on the column name and not on the
+    stem: '-CuisineCount' is not in `definitions`, but its column is.
+
+    Returns: {'ok', 'error'}. The first problem in caller order is reported, so
+    the message names one offending input rather than a list.
+  #}
+  {% set owner = {} %}
+  {% set problems = [] %}
+
+  {% for stem in definitions %}
+    {% do owner.update({
+        jstark.column_name(stem, feature_period): 'the ' ~ stem ~ ' feature'
+    }) %}
+  {% endfor %}
+
+  {% for cuisine in cuisines %}
+    {% if cuisine is not string %}
+      {% do problems.append(jstark.error_message(
+          jstark.error_codes()['invalid_cuisine'],
+          'cuisines entry ' ~ (cuisine | string) ~ ' is not a string; every '
+          ~ 'entry must be a non-empty string naming a cuisine'
+      )) %}
+    {% elif cuisine | trim == '' %}
+      {% do problems.append(jstark.error_message(
+          jstark.error_codes()['invalid_cuisine'],
+          "cuisines entry '" ~ cuisine ~ "' is empty or whitespace only; every "
+          ~ 'entry must be a non-empty string naming a cuisine'
+      )) %}
+    {% else %}
+      {% set column = jstark.column_name(cuisine ~ 'CuisineCount', feature_period) %}
+      {% if column in owner %}
+        {% do problems.append(jstark.error_message(
+            jstark.error_codes()['duplicate_column_name'],
+            "cuisines entry '" ~ cuisine ~ "' produces the column " ~ column
+            ~ ', which is already taken by ' ~ owner[column]
+            ~ '. Two columns cannot share one name, so rename or drop one of them'
+        )) %}
+      {% else %}
+        {% do owner.update({column: "cuisines entry '" ~ cuisine ~ "'"}) %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if problems | length > 0 %}
+    {{ return({'ok': false, 'error': problems[0]}) }}
+  {% endif %}
+  {{ return({'ok': true, 'error': none}) }}
+{% endmacro %}
+
+
+{% macro validate_cuisines(cuisines, definitions, feature_period) %}
+  {% set result = jstark.try_validate_cuisines(
+      cuisines, definitions, feature_period
+  ) %}
+  {% if not result['ok'] %}
+    {{ exceptions.raise_compiler_error(result['error']) }}
+  {% endif %}
+{% endmacro %}
+
+
 {% macro register_mealkit_cuisine_features(definitions, ctx) %}
+
+  {#- before the loop: a rejected cuisine must not reach `definitions`, where
+      it could overwrite an entry that is already there -#}
+  {% do jstark.validate_cuisines(
+      ctx['cuisines'], definitions, ctx['period']
+  ) %}
 
   {% for cuisine in ctx['cuisines'] %}
     {% set stem = cuisine ~ 'CuisineCount' %}

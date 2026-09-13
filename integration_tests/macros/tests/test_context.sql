@@ -78,13 +78,59 @@
       )
   ) %}
 
+  {# --- as_at precedence: the argument, then the var, then the run date --- #}
+  {# `dbt run-operation` does pass --vars, so this rung is reachable, but which
+     branch below runs depends on how the suite was invoked. Both branches make
+     the same number of assertions so the printed total does not move.
+
+     .github/workflows/build.yml runs the suite twice, once plain and once with
+     --vars '{jstark_as_at: 2021-10-01}', so CI exercises both branches. Run it
+     that way locally to check the var branch:
+
+       dbt run-operation jstark_test_suite --profiles-dir . \
+         --vars '{jstark_as_at: 2021-10-01}'
+
+     The expected date is rebuilt from the raw var string here rather than by
+     calling jstark.as_date on it, which is what the implementation does.
+
+     The run-date branch is also the only assertion that the run_date rung is
+     reached at all. resolve_as_at turns that rung into the warning covered by
+     integration_tests/check_as_at_warning.sh; here it is only the 'source'
+     value that is checked. #}
+  {% set raw_var = var('jstark_as_at', none) %}
+  {% set from_nothing = jstark.try_resolve_as_at(none) %}
+  {% if raw_var is none %}
+    {% do jstark_assert_equal(
+        results, 'as_at falls through to the run date when no var is set',
+        from_nothing['source'], 'run_date'
+    ) %}
+    {% do jstark_assert_true(
+        results, 'the run-date rung still yields a date',
+        from_nothing['date'] is not none
+    ) %}
+  {% else %}
+    {% do jstark_assert_equal(
+        results, 'as_at comes from the var when one is set',
+        from_nothing['source'], 'var'
+    ) %}
+    {% do jstark_assert_equal(
+        results, 'the var rung parses the var into its date',
+        from_nothing['date'],
+        d((raw_var | string)[0:4] | int, (raw_var | string)[5:7] | int,
+          (raw_var | string)[8:10] | int)
+    ) %}
+  {% endif %}
+  {#- and the argument still wins over the var, whichever way this was run -#}
+  {% do jstark_assert_equal(
+      results, 'the as_at argument outranks the var',
+      jstark.try_resolve_as_at('2019-03-04')['source'], 'argument'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'the as_at argument outranks the var: date',
+      jstark.try_resolve_as_at('2019-03-04')['date'], d(2019, 3, 4)
+  ) %}
+
   {# --- as_at accepts valid ISO date strings --- #}
-  {# NOTE: The var('jstark_as_at') rung in try_resolve_as_at cannot be exercised here
-     because dbt run-operation does not pass --vars, so var('jstark_as_at', none) always
-     returns none. Both rungs now share their validation logic through try_as_at_value,
-     so the argument rung's assertions below cover the shared validator, and the var
-     rung's remaining logic is just a lookup with nothing left to get wrong. This
-     architecture converts an unreachable code path into a tested one. #}
   {% set good_date = jstark.try_resolve_as_at('2021-10-01') %}
   {% do jstark_assert_equal(results, 'try_resolve_as_at good date ok', good_date['ok'], true) %}
   {% do jstark_assert_equal(
@@ -146,6 +192,66 @@
   {% do jstark_assert_true(
       results, 'try_resolve_columns whitespace value error has code',
       'invalid_column_map_value' in bad_ws_value['error']
+  ) %}
+
+  {# --- group_by takes bare column names, and each one only once --- #}
+  {#- unlike a column_map value, a group_by entry is re-emitted by name against
+      the base CTE, so an expression cannot resolve there; before this
+      validation existed group_by=["date_trunc('month', event_timestamp)"] gave
+      a raw Binder Error naming a column the caller never mentioned -#}
+  {% do jstark_assert_equal(
+      results, 'group_by accepts bare identifiers',
+      jstark.try_resolve_group_by(['customer', 'store_id', '_internal']),
+      {'ok': true, 'error': none,
+       'columns': ['customer', 'store_id', '_internal']}
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by accepts none',
+      jstark.try_resolve_group_by(none),
+      {'ok': true, 'error': none, 'columns': []}
+  ) %}
+
+  {% set expr_group_by = jstark.try_resolve_group_by(
+      ["date_trunc('month', event_timestamp)"]
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by rejects an expression', expr_group_by['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by expression error', expr_group_by['error'],
+      "jstark: invalid_group_by: group_by entry 'date_trunc('month', "
+      ~ "event_timestamp)' is not a column name. group_by takes bare column "
+      ~ 'names, not expressions: compute a derived grouping column in the SQL '
+      ~ 'you pass as `input` and name that column here'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by rejects a quoted identifier',
+      jstark.try_resolve_group_by(['"customer"'])['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by rejects a dotted reference',
+      jstark.try_resolve_group_by(['t.customer'])['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by rejects a non-string entry',
+      jstark.try_resolve_group_by([3])['ok'], false
+  ) %}
+
+  {% set repeat_group_by = jstark.try_resolve_group_by(['customer', 'customer']) %}
+  {% do jstark_assert_equal(
+      results, 'group_by rejects a repeat', repeat_group_by['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'group_by repeat error', repeat_group_by['error'],
+      "jstark: duplicate_column_name: group_by asks for the column 'customer' "
+      ~ 'more than once (entries customer and customer), which would emit two '
+      ~ 'grouping columns with one name'
+  ) %}
+  {#- case-folded, because an unquoted identifier is case-insensitive on every
+      warehouse this package targets -#}
+  {% do jstark_assert_equal(
+      results, 'group_by rejects a repeat differing only in case',
+      jstark.try_resolve_group_by(['customer', 'CUSTOMER'])['ok'], false
   ) %}
 
   {# --- the context stitches period, window and columns together --- #}
@@ -215,20 +321,5 @@
   {% set default_dow = jstark.try_weekday_index(none) %}
   {% do jstark_assert_equal(results, 'try_weekday_index none ok', default_dow['ok'], true) %}
   {% do jstark_assert_equal(results, 'try_weekday_index none index', default_dow['index'], 0) %}
-
-  {# --- as_at fallback to run_date is covered --- #}
-  {# try_resolve_as_at(none) with no jstark_as_at var falls back to run_started_at and
-     marks source='run_date'. This is the only mechanism preventing silent feature drift
-     across runs when as_at is unspecified; resolve_as_at uses this signal to emit the
-     warning that names the jstark_as_at var to set. Both assertions pin this path. #}
-  {% set run_date_result = jstark.try_resolve_as_at(none) %}
-  {% do jstark_assert_equal(
-      results, 'try_resolve_as_at(none) source is run_date',
-      run_date_result['source'], 'run_date'
-  ) %}
-  {% do jstark_assert_true(
-      results, 'try_resolve_as_at(none) date is not none',
-      run_date_result['date'] is not none
-  ) %}
 
 {% endmacro %}

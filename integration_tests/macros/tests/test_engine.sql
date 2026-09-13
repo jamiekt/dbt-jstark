@@ -156,4 +156,23 @@
       mapped_sql, 'cast(txn_ts as date) between'
   ) %}
 
+  {#- a column_map value may be an expression, not only a rename. This is the
+      documented difference from group_by, whose entries must be bare
+      identifiers (see try_resolve_group_by in macros/core/context.sql): a
+      column_map value only ever lands inside an aggregate or a window
+      predicate, where an expression is well formed and needs no name. -#}
+  {% set expression_mapped_sql = jstark_normalise_sql(jstark.generate_features(
+      input='select * from transactions',
+      group_by=['customer'],
+      generator='test',
+      as_at='2022-01-01',
+      feature_periods=['3m1'],
+      feature_stems=['TestSpend'],
+      column_map={'gross_spend': 'price * quantity'}
+  )) %}
+  {% do jstark_assert_contains(
+      results, 'an expression column_map reaches the aggregate',
+      expression_mapped_sql, 'then price * quantity end)'
+  ) %}
+
 {% endmacro %}

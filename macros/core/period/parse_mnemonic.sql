@@ -95,14 +95,68 @@
 {% endmacro %}
 
 
-{% macro parse_feature_periods(value) %}
+{% macro try_parse_feature_periods(value) %}
+  {#
+    Parse a whole feature_periods argument, rejecting a repeated period.
+
+    A repeat is not deduplicated: every feature column carries the period
+    mnemonic, so asking for one period twice asks for every column twice under
+    one name. DuckDB renames the second to <name>_1 and says nothing, another
+    warehouse may reject the query, and neither outcome is what the caller
+    meant. Building feature_periods by concatenating lists is the obvious way
+    to build it programmatically, so this is reachable by accident.
+
+    The key is the *parsed* mnemonic rather than the caller's spelling, because
+    the mnemonic is what the column name is built from (see
+    macros/core/naming.sql). feature_period() recomputes it from uom, start and
+    end, so 'm' and '0m0' and {'unit': 'm', 'start': 0, 'end': 0} all key as
+    '0m0' and all three collide with each other, which keying on the caller's
+    text would miss. Two different mnemonics cannot denote the same window: the
+    mnemonic is exactly (start, uom, end) rendered.
+
+    Returns: {'ok', 'error', 'periods'}.
+  #}
   {% if value is none or (value is not string and value | length == 0) %}
-    {{ return([jstark.parse_feature_period('52w0')]) }}
+    {{ return({
+        'ok': true, 'error': none,
+        'periods': [jstark.parse_feature_period('52w0')]
+    }) }}
   {% endif %}
+
   {% set values = [value] if (value is string or value is mapping) else value %}
   {% set periods = [] %}
+  {% set seen = {} %}
+  {% set problems = [] %}
+
   {% for item in values %}
-    {% do periods.append(jstark.parse_feature_period(item)) %}
+    {% set result = jstark.try_parse_feature_period(item) %}
+    {% if not result['ok'] %}
+      {% do problems.append(result['error']) %}
+    {% elif result['period']['mnemonic'] in seen %}
+      {% do problems.append(jstark.error_message(
+          jstark.error_codes()['duplicate_column_name'],
+          "feature_periods asks for the period '" ~ result['period']['mnemonic']
+          ~ "' more than once (entries " ~ seen[result['period']['mnemonic']]
+          ~ ' and ' ~ (item | string)
+          ~ '), which would emit every feature column twice under one name'
+      )) %}
+    {% else %}
+      {% do seen.update({result['period']['mnemonic']: (item | string)}) %}
+      {% do periods.append(result['period']) %}
+    {% endif %}
   {% endfor %}
-  {{ return(periods) }}
+
+  {% if problems | length > 0 %}
+    {{ return({'ok': false, 'error': problems[0], 'periods': none}) }}
+  {% endif %}
+  {{ return({'ok': true, 'error': none, 'periods': periods}) }}
+{% endmacro %}
+
+
+{% macro parse_feature_periods(value) %}
+  {% set result = jstark.try_parse_feature_periods(value) %}
+  {% if not result['ok'] %}
+    {{ exceptions.raise_compiler_error(result['error']) }}
+  {% endif %}
+  {{ return(result['periods']) }}
 {% endmacro %}
