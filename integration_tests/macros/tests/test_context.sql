@@ -79,6 +79,12 @@
   ) %}
 
   {# --- as_at accepts valid ISO date strings --- #}
+  {# NOTE: The var('jstark_as_at') rung in try_resolve_as_at cannot be exercised here
+     because dbt run-operation does not pass --vars, so var('jstark_as_at', none) always
+     returns none. Both rungs now share their validation logic through try_as_at_value,
+     so the argument rung's assertions below cover the shared validator, and the var
+     rung's remaining logic is just a lookup with nothing left to get wrong. This
+     architecture converts an unreachable code path into a tested one. #}
   {% set good_date = jstark.try_resolve_as_at('2021-10-01') %}
   {% do jstark_assert_equal(results, 'try_resolve_as_at good date ok', good_date['ok'], true) %}
   {% do jstark_assert_equal(
