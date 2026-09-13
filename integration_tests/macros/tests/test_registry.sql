@@ -220,4 +220,105 @@
       jstark.undeclared_dependencies(literal_plan), []
   ) %}
 
+  {# --- the core catalogue is complete and in a fixed order --- #}
+  {% set core_ctx = jstark.feature_context(
+      jstark.parse_feature_period('3m1'), as_at, 'Monday', false, cols, []
+  ) %}
+  {% set core_cat = jstark.catalogue('core', core_ctx) %}
+  {% do jstark_assert_equal(
+      results, 'core catalogue',
+      core_cat.keys() | list,
+      ['Count', 'CustomerCount', 'ApproxCustomerCount', 'ProductCount',
+       'ApproxProductCount', 'Quantity', 'Discount', 'GrossSpend', 'NetSpend',
+       'MinGrossSpend', 'MaxGrossSpend', 'MinNetSpend', 'MaxNetSpend',
+       'MinGrossPrice', 'MaxGrossPrice', 'MinNetPrice', 'MaxNetPrice',
+       'RecencyDays', 'EarliestPurchaseDate', 'MostRecentPurchaseDate']
+  ) %}
+
+  {# --- every core feature is a base feature, and every one is fully specified --- #}
+  {% for stem, definition in core_cat.items() %}
+    {% do jstark_assert_equal(
+        results, stem ~ ' is base', definition['kind'], 'base'
+    ) %}
+    {% do jstark_assert_true(
+        results, stem ~ ' has a valid aggregator',
+        definition['aggregator'] in jstark.aggregators()
+    ) %}
+    {% do jstark_assert_true(
+        results, stem ~ ' has an expression', definition['expression']
+    ) %}
+    {% do jstark_assert_true(
+        results, stem ~ ' has a default', definition['default']
+    ) %}
+    {% do jstark_assert_true(
+        results, stem ~ ' has a description_subject', definition['description_subject']
+    ) %}
+    {% do jstark_assert_true(
+        results, stem ~ ' has commentary', definition['commentary']
+    ) %}
+    {% do jstark_assert_true(
+        results, stem ~ ' requires event_timestamp',
+        'event_timestamp' in definition['required_columns']
+    ) %}
+    {% for column in definition['required_columns'] %}
+      {% do jstark_assert_true(
+          results, stem ~ ' requires only canonical columns (' ~ column ~ ')',
+          column in jstark.canonical_columns()
+      ) %}
+    {% endfor %}
+  {% endfor %}
+
+  {# --- the min/max default asymmetry is deliberate parity with jstark --- #}
+  {% do jstark_assert_equal(
+      results, 'MinGrossSpend default', core_cat['MinGrossSpend']['default'], '0.0'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'MaxGrossSpend default', core_cat['MaxGrossSpend']['default'], 'null'
+  ) %}
+
+  {# --- Quantity sums as an integer, Discount as a float --- #}
+  {% do jstark_assert_equal(
+      results, 'Quantity default', core_cat['Quantity']['default'], '0'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'Discount default', core_cat['Discount']['default'], '0.0'
+  ) %}
+
+  {#- CONTROLLER CORRECTION (do not restore the original): the brief here
+      originally asserted core_cat['RecencyDays']['expression'] equalled a
+      dbt.datediff(...) call with the same three arguments the implementation
+      passes. That is tautological — reversing the argument order changes both
+      sides identically, so the assertion passes while every recency value comes
+      out negative. It cannot be repaired by pinning a literal string either,
+      because dbt.datediff renders differently per adapter and this suite must
+      pass on BigQuery too. The direction is instead pinned by the L2 unit test
+      core_features_values, which expects recency_days_3m1 = 1; a reversal makes
+      it -1. Assert only what is adapter-independent here. -#}
+  {% do jstark_assert_true(
+      results, 'RecencyDays expression mentions as_at, not just the event date',
+      "date '2022-01-01'" in core_cat['RecencyDays']['expression']
+  ) %}
+
+  {#- Mandated by the Task 9 ruling: every generator's full catalogue must have
+      this assertion, or the guard is unarmed for that generator. Core is all
+      base features today, so it has nothing to find; it is asserted anyway so
+      the coverage exists the moment a derived core feature is added. -#}
+  {% do jstark_assert_equal(
+      results, 'core derived expressions declare their dependencies',
+      jstark.undeclared_dependencies(jstark.build_plan(
+          'core', [], [jstark.parse_feature_period('3m1')],
+          as_at, 'Monday', false, cols, []
+      )),
+      []
+  ) %}
+
+  {# --- mealkit takes only 10 of the core features --- #}
+  {% do jstark_assert_equal(
+      results, 'core_stems_for_mealkit',
+      jstark.core_stems_for_mealkit(),
+      ['Count', 'CustomerCount', 'ApproxCustomerCount', 'ProductCount',
+       'ApproxProductCount', 'Quantity', 'Discount', 'RecencyDays',
+       'EarliestPurchaseDate', 'MostRecentPurchaseDate']
+  ) %}
+
 {% endmacro %}
