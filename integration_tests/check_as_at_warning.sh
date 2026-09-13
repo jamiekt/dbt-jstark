@@ -45,9 +45,16 @@ output=$(uv run dbt --warn-error-options "$PROMOTE" \
     run-operation jstark_probe_as_at_no_warning --profiles-dir . 2>&1)
 if [ $? -ne 0 ]; then
     echo "$output" >&2
-    fail "resolve_as_at(an explicit date) emitted a warning.
+    # Distinguish the regression from unrelated breakage, as check 1 does:
+    # any non-zero exit fails the check either way, but saying which one it is
+    # saves the next person chasing the wrong bug.
+    if grep -q 'no as_at was supplied' <<< "$output"; then
+        fail "resolve_as_at(an explicit date) emitted the run-date warning.
 The guard is firing when it should not: anyone passing as_at would be told
 their features are irreproducible when they are not."
+    fi
+    fail "the run failed, but not because of the run-date warning.
+Something else is broken; fix that before trusting this check."
 fi
 echo "     ok - silent"
 
