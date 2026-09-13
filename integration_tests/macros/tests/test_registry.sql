@@ -189,4 +189,35 @@
       jstark.undeclared_dependencies(plan6), []
   ) %}
 
+  {#- The assertion above passes just as happily if undeclared_dependencies is
+      broken and always returns []. These two pin it from the other side: it must
+      report a genuine undeclared reference, and must NOT report a quoted literal
+      that merely looks like a feature column. -#}
+  {% set undeclared_plan = {'levels': [[{
+      'key': 'fake_3m1',
+      'definition': {
+          'kind': 'derived',
+          'depends_on': [],
+          'expression': 'test_spend_3m1 + 1'
+      }
+  }]]} %}
+  {% do jstark_assert_equal(
+      results, 'undeclared_dependencies reports an undeclared reference',
+      jstark.undeclared_dependencies(undeclared_plan),
+      ['fake_3m1 references test_spend_3m1 but does not declare it in depends_on']
+  ) %}
+
+  {% set literal_plan = {'levels': [[{
+      'key': 'fake_3m1',
+      'definition': {
+          'kind': 'derived',
+          'depends_on': [],
+          'expression': "case when promo_code = 'promo_5d1' then 1 else 0 end"
+      }
+  }]]} %}
+  {% do jstark_assert_equal(
+      results, 'undeclared_dependencies ignores quoted literals',
+      jstark.undeclared_dependencies(literal_plan), []
+  ) %}
+
 {% endmacro %}

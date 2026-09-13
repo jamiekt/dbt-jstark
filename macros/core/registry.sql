@@ -307,8 +307,17 @@
         {% for dep in item['definition']['depends_on'] %}
           {% do declared.append(jstark.dependency_key(dep[0], dep[1])) %}
         {% endfor %}
+        {#- Quoted literals are stripped before scanning. The pattern below is a
+            text-shape heuristic, so a string literal that happens to look like a
+            feature column (case when promo = 'promo_5d1' ...) would otherwise be
+            reported as an undeclared dependency. A genuine dependency reference
+            is always a bare identifier, never quoted, so removing literals cannot
+            hide a real one. -#}
+        {% set scannable = modules.re.sub(
+            "'[^']*'", "''", item['definition']['expression']
+        ) %}
         {% set referenced = modules.re.findall(
-            '[a-z][a-z0-9_]*_\\d+[dwmqy]\\d+', item['definition']['expression']
+            '[a-z][a-z0-9_]*_\\d+[dwmqy]\\d+', scannable
         ) %}
         {% for name in referenced %}
           {% if name not in declared %}
