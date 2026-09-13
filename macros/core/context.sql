@@ -69,7 +69,7 @@
 {% endmacro %}
 
 
-{% macro try_as_at_value(value, source) %}
+{% macro try_as_at_value(value, input_name) %}
   {#
     Validate a single as_at value (string, date, datetime, or bad input).
 
@@ -78,9 +78,11 @@
     than inline. This ensures that calendar validity checking, type gating,
     and error messages stay in sync across both precedence levels.
 
-    source: short string naming where the value came from ("as_at argument" or
-            "jstark_as_at var") for use in error details that name the
-            offending input.
+    input_name: the name the user typed for this input ("as_at" or
+            "jstark_as_at"), quoted back at them in error details so they know
+            which one to correct. Deliberately NOT called `source`: the 'source'
+            key that try_resolve_as_at returns means something different — which
+            precedence rung won ('argument' / 'var' / 'run_date').
 
     Returns: {'ok', 'error', 'date'} where 'date' is a datetime.date object
              if ok is true, or none if ok is false.
@@ -129,7 +131,7 @@
         'ok': false,
         'error': jstark.error_message(
             jstark.error_codes()['as_at_is_not_a_date'],
-            source ~ " must be a date, datetime, or ISO date string (YYYY-MM-DD)"
+            input_name ~ " must be a date, datetime, or ISO date string (YYYY-MM-DD)"
         ),
         'date': none
     }) }}
@@ -199,7 +201,14 @@
     {{ exceptions.raise_compiler_error(result['error']) }}
   {% endif %}
 
-  {# Emit warning if falling back to run date #}
+  {#
+    Warn only on the run-date rung. No L1 assertion can reach this guard —
+    Jinja cannot observe that exceptions.warn was called — so it is covered
+    instead by integration_tests/check_as_at_warning.sh, which runs
+    --warn-error and asserts on the exit code. This guard was once
+    accidentally dead for two commits without any test noticing; if you edit
+    it, run that script.
+  #}
   {% if result['source'] == 'run_date' %}
     {% do exceptions.warn(
         'jstark: no as_at was supplied, so features are being generated as at the '
