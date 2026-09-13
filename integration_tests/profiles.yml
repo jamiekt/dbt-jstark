@@ -26,11 +26,11 @@ jstark_integration_tests:
       threads: 4
     bigquery:
       type: bigquery
-      method: service-account-json
+      method: service-account
       project: "{{ env_var('JSTARK_BIGQUERY_PROJECT', '') }}"
       dataset: "{{ env_var('JSTARK_BIGQUERY_DATASET', 'jstark') }}"
       threads: 4
-      keyfile_json: "{{ env_var('JSTARK_BIGQUERY_KEYFILE_JSON', '{}') | fromjson }}"
+      keyfile: "{{ env_var('JSTARK_BIGQUERY_KEYFILE', '/dev/null') }}"
     databricks:
       type: databricks
       host: "{{ env_var('JSTARK_DATABRICKS_HOST', '') }}"
