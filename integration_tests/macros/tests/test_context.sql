@@ -86,6 +86,58 @@
       good_date['date'], d(2021, 10, 1)
   ) %}
 
+  {# --- as_at rejects impossible dates (shape-valid but calendar-invalid) --- #}
+  {% set bad_month = jstark.try_resolve_as_at('2021-13-45') %}
+  {% do jstark_assert_equal(results, 'try_resolve_as_at invalid month ok', bad_month['ok'], false) %}
+  {% do jstark_assert_true(
+      results, 'try_resolve_as_at invalid month contains code',
+      'as_at_is_not_a_date' in bad_month['error']
+  ) %}
+
+  {# --- as_at rejects non-existent days in leap year edge cases --- #}
+  {% set bad_day = jstark.try_resolve_as_at('2021-02-30') %}
+  {% do jstark_assert_equal(results, 'try_resolve_as_at invalid day ok', bad_day['ok'], false) %}
+  {% do jstark_assert_true(
+      results, 'try_resolve_as_at invalid day contains code',
+      'as_at_is_not_a_date' in bad_day['error']
+  ) %}
+
+  {# --- as_at accepts valid leap day (Feb 29 in a leap year) --- #}
+  {% set leap_day = jstark.try_resolve_as_at('2020-02-29') %}
+  {% do jstark_assert_equal(results, 'try_resolve_as_at leap day ok', leap_day['ok'], true) %}
+  {% do jstark_assert_equal(
+      results, 'try_resolve_as_at leap day value',
+      leap_day['date'], d(2020, 2, 29)
+  ) %}
+
+  {# --- as_at rejects non-string non-date inputs like integers --- #}
+  {% set bad_type = jstark.try_resolve_as_at(20220101) %}
+  {% do jstark_assert_equal(results, 'try_resolve_as_at int input ok', bad_type['ok'], false) %}
+  {% do jstark_assert_true(
+      results, 'try_resolve_as_at int input contains code',
+      'as_at_is_not_a_date' in bad_type['error']
+  ) %}
+
+  {# --- column_map rejects empty string values --- #}
+  {% set bad_value = jstark.try_resolve_columns({'gross_spend': ''}) %}
+  {% do jstark_assert_equal(results, 'try_resolve_columns empty value ok', bad_value['ok'], false) %}
+  {% do jstark_assert_equal(
+      results, 'try_resolve_columns empty value error',
+      bad_value['error'],
+      jstark.error_message(
+          jstark.error_codes()['invalid_column_map_value'],
+          "column_map['gross_spend'] must be a non-empty string, got ''"
+      )
+  ) %}
+
+  {# --- column_map rejects whitespace-only values --- #}
+  {% set bad_ws_value = jstark.try_resolve_columns({'gross_spend': '   '}) %}
+  {% do jstark_assert_equal(results, 'try_resolve_columns whitespace value ok', bad_ws_value['ok'], false) %}
+  {% do jstark_assert_true(
+      results, 'try_resolve_columns whitespace value error has code',
+      'invalid_column_map_value' in bad_ws_value['error']
+  ) %}
+
   {# --- the context stitches period, window and columns together --- #}
   {% set ctx = jstark.feature_context(
       jstark.parse_feature_period('3m1'), d(2022, 1, 1), 'Monday', false, cols, []
@@ -139,6 +191,13 @@
   ) %}
 
   {# --- first_day_of_week empty string must fail (not become Monday) --- #}
+  {# NOTE: The end-to-end raise of feature_context(..., first_day_of_week='', ...)
+     is verified live but cannot be asserted in-sandbox because Jinja has no try/except.
+     This assertion on try_weekday_index('') is the proxy: it confirms the lower-level
+     validation works. What connects this proxy to the full behaviour is feature_context's
+     eager jstark.weekday_index(day_of_week) call at line 172, which means removing that
+     call would expose the gap. If that call is removed, the suite will not catch it, so
+     this comment serves as a record of that known limitation. #}
   {% set bad_dow = jstark.try_weekday_index('') %}
   {% do jstark_assert_equal(results, 'try_weekday_index empty ok', bad_dow['ok'], false) %}
 

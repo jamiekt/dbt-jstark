@@ -36,6 +36,19 @@
           'cols': none
       }) }}
     {% endif %}
+    {# Validate that the value is a non-empty string #}
+    {% set value = overrides[key] %}
+    {% if not (value is string and value | trim != '') %}
+      {{ return({
+          'ok': false,
+          'error': jstark.error_message(
+              jstark.error_codes()['invalid_column_map_value'],
+              "column_map['" ~ key ~ "'] must be a non-empty string, got '"
+              ~ (value | string) ~ "'"
+          ),
+          'cols': none
+      }) }}
+    {% endif %}
   {% endfor %}
 
   {% set cols = {} %}
@@ -63,10 +76,16 @@
     Falling back to the run date makes features non-deterministic between
     runs, which is almost never what someone wants in a scheduled job, so the
     fallback warns and names the var to set.
+
+    String inputs must match ISO 8601 format YYYY-MM-DD exactly, with range
+    validation: month in 1..12, day in 1..days_in_month. Non-string inputs
+    must be date or datetime objects (with .year/.month/.day).
   #}
+
   {% if as_at is not none %}
-    {# Validate string dates match ISO 8601 format #}
+    {# Validate input type and content #}
     {% if as_at is string %}
+      {# Shape check: YYYY-MM-DD #}
       {% if not modules.re.match('^\\d{4}-\\d{2}-\\d{2}$', as_at) %}
         {{ return({
             'ok': false,
@@ -77,6 +96,42 @@
             'date': none
         }) }}
       {% endif %}
+      {# Range check: extract and validate month and day #}
+      {% set parts = modules.re.findall('\\d+', as_at) %}
+      {% set year = parts[0] | int %}
+      {% set month = parts[1] | int %}
+      {% set day = parts[2] | int %}
+      {% if month < 1 or month > 12 %}
+        {{ return({
+            'ok': false,
+            'error': jstark.error_message(
+                jstark.error_codes()['as_at_is_not_a_date'],
+                "'" ~ as_at ~ "' is not a valid ISO date; month must be in 1..12"
+            ),
+            'date': none
+        }) }}
+      {% endif %}
+      {% set max_day = jstark.days_in_month(year, month) %}
+      {% if day < 1 or day > max_day %}
+        {{ return({
+            'ok': false,
+            'error': jstark.error_message(
+                jstark.error_codes()['as_at_is_not_a_date'],
+                "'" ~ as_at ~ "' is not a valid ISO date; day must be in 1.." ~ max_day
+            ),
+            'date': none
+        }) }}
+      {% endif %}
+    {% elif as_at is number or as_at is mapping or (as_at is iterable and as_at is not string) %}
+      {# Reject integers, lists, dicts, booleans, etc. Accept date/datetime objects. #}
+      {{ return({
+          'ok': false,
+          'error': jstark.error_message(
+              jstark.error_codes()['as_at_is_not_a_date'],
+              "as_at must be a date, datetime, or ISO date string (YYYY-MM-DD)"
+          ),
+          'date': none
+      }) }}
     {% endif %}
     {{ return({
         'ok': true,
@@ -87,8 +142,9 @@
 
   {% set from_var = var('jstark_as_at', none) %}
   {% if from_var is not none %}
-    {# Validate string dates match ISO 8601 format #}
+    {# Validate input type and content #}
     {% if from_var is string %}
+      {# Shape check: YYYY-MM-DD #}
       {% if not modules.re.match('^\\d{4}-\\d{2}-\\d{2}$', from_var) %}
         {{ return({
             'ok': false,
@@ -99,6 +155,42 @@
             'date': none
         }) }}
       {% endif %}
+      {# Range check: extract and validate month and day #}
+      {% set parts = modules.re.findall('\\d+', from_var) %}
+      {% set year = parts[0] | int %}
+      {% set month = parts[1] | int %}
+      {% set day = parts[2] | int %}
+      {% if month < 1 or month > 12 %}
+        {{ return({
+            'ok': false,
+            'error': jstark.error_message(
+                jstark.error_codes()['as_at_is_not_a_date'],
+                "'" ~ from_var ~ "' is not a valid ISO date; month must be in 1..12"
+            ),
+            'date': none
+        }) }}
+      {% endif %}
+      {% set max_day = jstark.days_in_month(year, month) %}
+      {% if day < 1 or day > max_day %}
+        {{ return({
+            'ok': false,
+            'error': jstark.error_message(
+                jstark.error_codes()['as_at_is_not_a_date'],
+                "'" ~ from_var ~ "' is not a valid ISO date; day must be in 1.." ~ max_day
+            ),
+            'date': none
+        }) }}
+      {% endif %}
+    {% elif from_var is number or from_var is mapping or (from_var is iterable and from_var is not string) %}
+      {# Reject integers, lists, dicts, booleans, etc. Accept date/datetime objects. #}
+      {{ return({
+          'ok': false,
+          'error': jstark.error_message(
+              jstark.error_codes()['as_at_is_not_a_date'],
+              "jstark_as_at must be a date, datetime, or ISO date string (YYYY-MM-DD)"
+          ),
+          'date': none
+      }) }}
     {% endif %}
     {{ return({
         'ok': true,
@@ -116,40 +208,15 @@
 
 
 {% macro resolve_as_at(as_at) %}
-  {#
-    Precedence: the argument, then the jstark_as_at var, then the run date.
-
-    Falling back to the run date makes features non-deterministic between
-    runs, which is almost never what someone wants in a scheduled job, so the
-    fallback warns and names the var to set.
-  #}
-  {% if as_at is not none %}
-    {# Validate string dates match ISO 8601 format #}
-    {% if as_at is string %}
-      {% if not modules.re.match('^\\d{4}-\\d{2}-\\d{2}$', as_at) %}
-        {{ jstark.raise_error(
-            jstark.error_codes()['as_at_is_not_a_date'],
-            "'" ~ as_at ~ "' is not a valid ISO date; expected format YYYY-MM-DD"
-        ) }}
-      {% endif %}
-    {% endif %}
-    {{ return(jstark.as_date(as_at)) }}
+  {% set result = jstark.try_resolve_as_at(as_at) %}
+  {% if not result['ok'] %}
+    {{ exceptions.raise_compiler_error(result['error']) }}
+  {% endif %}
+  {% if result['date'] is not none %}
+    {{ return(result['date']) }}
   {% endif %}
 
-  {% set from_var = var('jstark_as_at', none) %}
-  {% if from_var is not none %}
-    {# Validate string dates match ISO 8601 format #}
-    {% if from_var is string %}
-      {% if not modules.re.match('^\\d{4}-\\d{2}-\\d{2}$', from_var) %}
-        {{ jstark.raise_error(
-            jstark.error_codes()['as_at_is_not_a_date'],
-            "'" ~ from_var ~ "' is not a valid ISO date; expected format YYYY-MM-DD"
-        ) }}
-      {% endif %}
-    {% endif %}
-    {{ return(jstark.as_date(from_var)) }}
-  {% endif %}
-
+  {# Fallback: use run date with warning #}
   {% do exceptions.warn(
       'jstark: no as_at was supplied, so features are being generated as at the '
       ~ 'run date. Pass as_at=... or set the jstark_as_at var to make results '
