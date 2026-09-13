@@ -143,14 +143,19 @@
   {% do jstark_assert_equal(
       results, 'Allergens aggregator', cat['Allergens']['aggregator'], 'collect_set'
   ) %}
-  {#- pinned as an equality against the rendered literal, not a != 'null'
-      truthiness check that would pass for any non-null value at all. The L1
-      suite always compiles against the active adapter (duckdb here, as
-      test_adapters.sql's 'double_type on duckdb' assertion also relies on),
-      so an adapter-specific literal is safe without a guard. -#}
+  {#- pins that Allergens routes its default through the empty_string_array
+      adapter seam rather than hardcoding a literal (e.g. 'null', '[]', or an
+      empty string) - the class of bug this mealkit test can and should own.
+      What empty_string_array() itself renders on each adapter is pinned
+      per-warehouse in test_adapters.sql, and on non-DuckDB warehouses that
+      rendering is proven against a live query by the warehouses.yml
+      workflow (see test_adapters.sql's own header comment) - not here. That
+      keeps this assertion adapter-independent, so it neither needs nor wants
+      a target.type guard, and the suite's assertion count stays identical on
+      every warehouse. -#}
   {% do jstark_assert_equal(
-      results, 'Allergens defaults to an empty array of strings',
-      cat['Allergens']['default'], 'cast(list_value() as TEXT[])'
+      results, 'Allergens defaults through the empty_string_array seam',
+      cat['Allergens']['default'], jstark.empty_string_array()
   ) %}
 
   {# --- mealkit is two derived levels deep, as grocery is --- #}
