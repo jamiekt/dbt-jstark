@@ -7,6 +7,7 @@
   {% do jstark_test_date_math(results) %}
   {% do jstark_test_period(results) %}
   {% do jstark_test_period_label(results) %}
+  {% do jstark_test_adapters(results) %}
 
   {% if results | length == 0 %}
     {{ exceptions.raise_compiler_error('jstark L1 test suite ran no assertions at all.') }}

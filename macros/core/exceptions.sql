@@ -12,7 +12,8 @@
       'end_greater_than_start': 'feature_period_end_greater_than_start',
       'feature_not_found': 'feature_not_found',
       'unknown_column_map_key': 'unknown_column_map_key',
-      'invalid_first_day_of_week': 'invalid_first_day_of_week'
+      'invalid_first_day_of_week': 'invalid_first_day_of_week',
+      'unknown_aggregator': 'unknown_aggregator'
   }) }}
 {% endmacro %}
 
