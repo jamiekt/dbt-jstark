@@ -63,6 +63,23 @@
       probe5[0]['ok'], true
   ) %}
 
+  {#- a none haystack fails as an assertion rather than raising a TypeError out
+      of Jinja, which would abort the suite and hide the failures collected
+      before it. The common source is result['error'] on a try_ result that
+      unexpectedly came back ok. -#}
+  {% set probe6 = [] %}
+  {% do jstark_assert_contains(probe6, 'probe6', none, 'hay') %}
+  {% do jstark_assert_equal(
+      results, 'assert_contains records the none-haystack call', probe6 | length, 1
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'assert_contains fails a none haystack', probe6[0]['ok'], false
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'assert_contains none-haystack message', probe6[0]['message'],
+      'probe6: the haystack is not a string but None, so it cannot contain <hay>'
+  ) %}
+
   {# error codes are stable #}
   {#- every code is pinned individually, by name: an error code is user-facing
       surface, and a renamed one should break a test rather than silently change

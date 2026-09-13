@@ -41,6 +41,19 @@
         'message': label ~ ': the needle is empty, so this assertion would pass '
                    ~ 'against any haystack; assert on a real value'
     }) %}
+  {#- a non-string haystack is almost always a dict lookup that came back none —
+      result['error'] on a result that unexpectedly succeeded, say. `needle not
+      in none` raises a TypeError from inside Jinja, which aborts the whole
+      suite with a Compilation Error and hides every other failure it had
+      already collected, so it is reported as a failed assertion instead. -#}
+  {% elif haystack is not string %}
+    {% do results.append({
+        'ok': false,
+        'label': label,
+        'message': label ~ ': the haystack is not a string but '
+                   ~ (haystack | string) ~ ', so it cannot contain <'
+                   ~ needle ~ '>'
+    }) %}
   {% elif needle not in haystack %}
     {% do results.append({
         'ok': false,
