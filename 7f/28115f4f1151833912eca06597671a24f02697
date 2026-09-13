@@ -1,0 +1,23 @@
+macros/core/context.sql
+  s_768496ec7dbf5b::t_0d546c0879a6a6 39-47
+macros/core/generate_features.sql
+  s_768496ec7dbf5b::t_180638044426d0 50-53
+macros/core/registry.sql
+  s_768496ec7dbf5b::t_9cfc7941079011 301-313
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7f28115f4f1151833912eca06597671a24f02697",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
