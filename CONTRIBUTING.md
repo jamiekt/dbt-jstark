@@ -104,13 +104,16 @@ Implement whichever of these your warehouse needs, in
 | Macro | What it must return |
 | --- | --- |
 | `<adapter>__jstark_to_date(expression)` | SQL casting a timestamp to a date |
-| `<adapter>__jstark_double_type(expression)` | The name of an 8-byte double-precision floating point type. Only needs overriding when the warehouse doesn't spell it `double precision`; `bigquery__jstark_double_type` returns `'float64'` because BigQuery has no `double precision` synonym. |
+| `<adapter>__jstark_double_type()` | The name of an 8-byte double-precision floating point type. It takes no arguments — it returns a type name, and the caller (`jstark.safe_divide`) builds the cast around it. Only needs overriding when the warehouse doesn't spell it `double precision`; `bigquery__jstark_double_type` returns `'float64'` because BigQuery has no `double precision` synonym. |
 | `<adapter>__jstark_approx_count_distinct(expression)` | SQL for an approximate distinct count. If your warehouse has none, return an exact count and `exceptions.warn` — that is what `postgres__` does. **Beware when writing fixtures:** a HyperLogLog estimate need not equal the exact count on tiny inputs, so an `Approx*` expectation is only portable if the fixture's values happen to make the two agree. DuckDB 1.5.5's `approx_count_distinct` estimates the pair `('o1','o2')` as 1, not 2, while Postgres computes it exactly — which is why `mealkit_orders` uses `ord1`/`ord2`/`ord3`. If an `Approx*` value disagrees between warehouses, change the fixture values rather than pinning what one warehouse happens to return. |
-| `<adapter>__jstark_collect_set(expression, window)` | SQL for a sorted, deduplicated, null-free array of `expression` over rows matching `window`. Two shapes work: `FILTER (WHERE ...)` where supported, `CASE WHEN` otherwise. |
+| `<adapter>__jstark_collect_set(expression, window)` | SQL for a sorted, deduplicated, null-free array of `expression` over rows matching `window`. Two shapes work: `FILTER (WHERE ...)` where supported, `CASE WHEN` otherwise. This is the one seam with **no** portable default: `default__jstark_collect_set` raises `unsupported_adapter` naming your adapter, because every spelling that works on one warehouse is a syntax error on another. If your warehouse needs any macro in this table, it needs this one. |
 | `<adapter>__jstark_empty_string_array()` | A literal empty array of strings |
 
-Everything else routes through dbt-core's cross-database macros (`dbt.datediff`,
-`dbt.type_float`, `dbt.type_string`) and needs nothing. Not everything in
+Everything else routes through dbt-core's cross-database macros (`dbt.datediff`
+and `dbt.type_string`) and needs nothing. `dbt.type_float` is deliberately *not*
+used: it renders a 4-byte `FLOAT` on at least one warehouse, so every cast goes
+through `jstark.double_type()` instead — see the header comment in
+`macros/core/adapters/jstark_double_type.sql`. Not everything in
 `macros/core/adapters/` is a dispatch shim, though: `safe_divide.sql` and
 `aggregate_sql.sql` live in the same directory but call the dispatched macros
 above rather than being dispatched themselves — they are the same on every
@@ -122,10 +125,16 @@ today were written from the documentation and have not been run against a real
 warehouse; verifying them is a genuinely useful contribution.
 
 Databricks is the clearest gap: it has a profile target and a nightly job but no
-`databricks__` macros at all, so it falls through to `default__`, which emits
-`list_sort(...)` and `cast(array[] as text[])` — neither of which is Spark SQL.
+`databricks__` macros at all, so it falls through to `default__`. For
+`jstark_collect_set` that default raises `unsupported_adapter` naming
+`databricks` and pointing at the file to add the macro to, which is the intended
+outcome: a compile-time jstark error beats a DuckDB expression the cluster would
+reject as an unexplained syntax error. For `jstark_empty_string_array` the
+default emits an `array[] as <string>[]` cast built from `dbt.type_string()`,
+whose `array[...]` constructor is not Spark SQL — Spark spells an empty array
+`array()` — so that one fails on the warehouse instead of at compile time.
 `databricks__jstark_collect_set` and `databricks__jstark_empty_string_array`
-are known to be needed. Whether `databricks__jstark_double_type` is also
+are therefore both known to be needed. Whether `databricks__jstark_double_type` is also
 needed depends on whether Spark SQL accepts `double precision` as a type
 name (the `default__` value every other adapter without an override
 inherits) — that has not been checked against a running cluster, so do not
@@ -146,8 +155,10 @@ against Databricks and found out.
 - **Errors are raised by paired macros.** `try_<name>` returns
   `{'ok': ..., 'error': ...}` and the wrapper raises. Without `try`/`except`
   there is no other way to assert on an error message in a test. There are
-  nine error codes today; see `macros/core/exceptions.sql` — that list is not
-  frozen, so add to it rather than reusing a code for something new.
+  thirteen error codes today; see `macros/core/exceptions.sql` — that list is
+  not frozen, so add to it rather than reusing a code for something new. The
+  L1 suite pins the codes and their count, so adding one means updating
+  `integration_tests/macros/tests/test_harness.sql` in the same change.
 - **Never emit `/`.** Use `jstark.safe_divide`, which casts to
   `jstark.double_type()` and `nullif`s the denominator — otherwise Postgres and
   Redshift truncate integer division, and everything divides by zero

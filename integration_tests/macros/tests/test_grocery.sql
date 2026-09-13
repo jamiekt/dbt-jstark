@@ -125,11 +125,11 @@
       jstark.undeclared_dependencies(full_plan), []
   ) %}
 
-  {#- deliberately not wrapped in a `{% if target.type == 'duckdb' %}` guard.
-      Both sides render through whichever adapter is active, so the comparison
-      is adapter-independent; and a guard would make this suite's assertion
-      count differ between warehouses, which defeats the printed count as a
-      coverage check in the .github/workflows/warehouses.yml matrix. -#}
+  {#- deliberately not wrapped in a `{% if target.type == 'duckdb' %}` guard,
+      unlike the string-pinning assertions in test_adapters.sql. Both sides of
+      this comparison render through whichever adapter is active, so it asserts
+      that the entry point delegates rather than asserting any warehouse's SQL
+      text, and it is therefore correct on every adapter. -#}
   {% do jstark_assert_equal(
       results, 'grocery_features delegates to generate_features',
       jstark_normalise_sql(jstark.grocery_features(
