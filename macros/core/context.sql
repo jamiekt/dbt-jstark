@@ -36,7 +36,15 @@
           'cols': none
       }) }}
     {% endif %}
-    {# Validate that the value is a non-empty string #}
+    {#
+      The value is checked for being a non-empty string and nothing more. It
+      is spliced into the emitted SQL unquoted, so it may be any expression —
+      `{'gross_spend': 'price * quantity'}` is a supported mapping, not a
+      mistake — which rules out an identifier-shape check. A malformed
+      expression here surfaces as a syntax error from the warehouse. That is
+      an acceptable trade: column_map is written by whoever writes the model,
+      who can already put arbitrary SQL in it.
+    #}
     {% set value = overrides[key] %}
     {% if not (value is string and value | trim != '') %}
       {{ return({

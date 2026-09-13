@@ -298,6 +298,19 @@
     Every derived expression is scanned for identifiers that look like a
     feature column — a name ending in a period mnemonic — and each one must
     appear in that feature's declared dependencies.
+
+    Deliberately NOT called from try_build_plan. The only authors of feature
+    definitions are this package's own generators, so the mistake this catches
+    can only be made here, at authoring time — not by a caller of
+    generate_features. It is therefore armed in the test suite instead of on
+    every model compile: EVERY generator's full catalogue must have an
+    assertion that this returns [] for it (see test_registry.sql for the test
+    generator). Adding a generator without that assertion leaves it unguarded.
+
+    Note it finds nothing when use_absolute_periods is true, because absolute
+    column labels do not match the mnemonic shape. That costs no correctness:
+    a generator's expressions are identical either way, so the mnemonic-mode
+    assertion covers both.
   #}
   {% set problems = [] %}
   {% for level in plan['levels'] %}

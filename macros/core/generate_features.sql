@@ -47,6 +47,10 @@
   {% set resolved_as_at = jstark.resolve_as_at(as_at) %}
   {% set periods = jstark.parse_feature_periods(feature_periods) %}
   {% set cols = jstark.resolve_columns(column_map) %}
+  {#- Unvalidated on purpose, and for the same reason as column_map's values
+      (see try_resolve_columns): each entry is spliced unquoted into both the
+      select list and the group by, so an expression such as
+      date_trunc('month', order_ts) is a supported grouping. -#}
   {% set group_by_columns = group_by if group_by else [] %}
 
   {% set plan = jstark.build_plan(
