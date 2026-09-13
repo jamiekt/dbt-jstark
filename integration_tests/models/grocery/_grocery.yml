@@ -3,9 +3,10 @@ version: 2
 models:
   - name: grocery_specific_features
     description: The 17 grocery-specific features over a 3m1 period.
-    tests:
+    data_tests:
       - dbt_utils.equality:
-          compare_model: ref('expected_grocery_features')
+          arguments:
+            compare_model: ref('expected_grocery_features')
   - name: grocery_all_features
     description: >
       All 37 grocery features over two periods and two grouping columns. Built
