@@ -17,6 +17,19 @@
     }'
 #}
 
+{% macro yaml_double_quoted(text) %}
+  {#
+    A double-quoted YAML scalar. Backslashes are escaped before quotes, or a
+    real backslash immediately before a real quote would end up mis-paired.
+    Quoting means a value containing a colon, a quote or a leading indicator
+    character cannot break the emitted document.
+  #}
+  {{ return(
+      '"' ~ (text | string | replace('\\', '\\\\') | replace('"', '\\"')) ~ '"'
+  ) }}
+{% endmacro %}
+
+
 {% macro schema_yml_text(
     model_name,
     generator='grocery',
@@ -37,18 +50,20 @@
 
   {% set lines = ['version: 2', '', 'models:', '  - name: ' ~ model_name,
                   '    columns:'] %}
-  {% for column in group_by %}
-    {% do lines.append('      - name: ' ~ column) %}
+  {#- jstark.resolve_group_by already restricts these to bare identifiers, so
+      nothing hostile can reach the escaping below. Escaped anyway: this file
+      generates a document a caller pastes into their project, and two
+      independent guards on generated output is the right number. -#}
+  {% for column in jstark.resolve_group_by(group_by) %}
+    {% do lines.append(
+        '      - name: ' ~ jstark.yaml_double_quoted(column)
+    ) %}
     {% do lines.append('        description: Grouping column.') %}
   {% endfor %}
   {% for row in rows %}
     {% do lines.append('      - name: ' ~ row['feature_name']) %}
-    {#- double-quoted YAML with embedded quotes escaped, so a description
-        containing a colon or a quote cannot break the output -#}
     {% do lines.append(
-        '        description: "'
-        ~ (row['description'] | replace('\\', '\\\\') | replace('"', '\\"'))
-        ~ '"'
+        '        description: ' ~ jstark.yaml_double_quoted(row['description'])
     ) %}
   {% endfor %}
 

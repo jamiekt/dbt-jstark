@@ -202,16 +202,25 @@
   {% do jstark_assert_contains(
       results, 'schema.yml opens a columns block', structure_text, '    columns:'
   ) %}
+  {#- the group_by name is emitted as a double-quoted YAML scalar. It is already
+      restricted to a bare identifier by jstark.resolve_group_by, so the quoting
+      is the second of two independent guards on a generated document. -#}
   {% do jstark_assert_contains(
       results, 'schema.yml labels a group_by column',
-      structure_text, '      - name: customer\n        description: Grouping column.'
+      structure_text,
+      '      - name: "customer"\n        description: Grouping column.'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'yaml_double_quoted escapes backslashes before quotes',
+      jstark.yaml_double_quoted('a: \\ and " and \'  '),
+      '"a: \\\\ and \\" and \'  "'
   ) %}
   {#- the ordering itself, not just the presence of both blocks: a caller
       pastes this straight into a model's schema.yml, where column docs read
       top to bottom in the order the columns are selected, group_by first. -#}
   {% do jstark_assert_true(
       results, 'schema.yml lists group_by columns before feature columns',
-      structure_text.index('      - name: customer')
+      structure_text.index('      - name: "customer"')
       < structure_text.index('      - name: gross_spend_3m1')
   ) %}
 
