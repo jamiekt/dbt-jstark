@@ -1,0 +1,42 @@
+docs/superpowers/plans/2026-09-13-dbt-jstark.md
+  s_768496ec7dbf5b::t_374fd25f6c4504 6228-6271,6276-6277,6279-6389,6392-6636,6708-6728,6733-7196
+  s_768496ec7dbf5b::t_cdd17122d82545 5713-5852,5854-5855,5857-6134,6136-6145,6147-6189,6191,6194-6227
+  s_768496ec7dbf5b::t_6d6eb261722fc6 732-1115
+  s_768496ec7dbf5b::t_2dfc1508c0ba79 4243-4269,4272-4932
+  s_768496ec7dbf5b::t_9763d555f8268f 6135
+  s_768496ec7dbf5b::t_17cb28ed9fce95 4933-5712
+  s_768496ec7dbf5b::t_23286953fb318e 4270-4271
+  s_768496ec7dbf5b::t_3f8aeec42a2e20 3226-3733
+  s_768496ec7dbf5b::t_cad53ddd2571d5 6190,6192-6193
+  s_768496ec7dbf5b::t_07551e08d208ea 6390-6391
+  s_768496ec7dbf5b::t_caea6a83bbd6b2 1798-2166
+  s_768496ec7dbf5b::t_64470b65232239 481-731
+  s_768496ec7dbf5b::t_78e2cb1f34a5ec 1532-1797
+  s_768496ec7dbf5b::t_a2d970dccb6aff 6729-6732
+  s_768496ec7dbf5b::t_003fca1de3f222 6637-6707
+  s_768496ec7dbf5b::t_3b0e15643246b6 3734-4242
+  s_768496ec7dbf5b::t_1d93694984dd02 125-480
+  s_768496ec7dbf5b::t_8684bb9f4156b9 2167-2487
+  s_768496ec7dbf5b::t_db221b96a24350 6146
+  s_768496ec7dbf5b::t_26c01437c39ac2 1-124
+  s_768496ec7dbf5b::t_923760523adaee 2488-3225
+  s_768496ec7dbf5b::t_420a342a876f06 5853,5856
+  s_768496ec7dbf5b::t_ff7a732543291c 6272-6275,6278
+  s_768496ec7dbf5b::t_d16a5375c75ab2 1116-1531
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3e2049c09edebea44862631a7ab8626df64fb867",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
