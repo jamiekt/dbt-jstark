@@ -1,0 +1,21 @@
+integration_tests/macros/tests/test_date_math.sql
+  s_768496ec7dbf5b::t_7f695fd8a9c410 136-141
+macros/core/period/date_math.sql
+  s_768496ec7dbf5b::t_3c8fa639674ab0 114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2ff198ac3a3c014e43228ac661b835a08433e6f3",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
