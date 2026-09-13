@@ -6,7 +6,29 @@ models:
       Exercises the engine end to end against the test generator: a base sum,
       a base distinct count, and a derived feature over both.
 
+  - name: feature_catalog_grocery
+    description: >
+      Feature metadata as a relation, for two grocery features over one
+      period. Takes no input, so its unit test has no `given`.
+
 unit_tests:
+  - name: feature_catalog_grocery_rows
+    description: >
+      One row per feature, with the derived feature's required_columns
+      reaching through to the input columns its dependencies need.
+    model: feature_catalog_grocery
+    given: []
+    expect:
+      format: dict
+      rows:
+        - {feature_name: gross_spend_3m1, stem: GrossSpend, period_mnemonic: '3m1',
+           period_unit: Month, start_date: '2021-10-01', end_date: '2021-12-31',
+           required_columns: 'event_timestamp,gross_spend', kind: base}
+        - {feature_name: avg_gross_spend_per_basket_3m1, stem: AvgGrossSpendPerBasket,
+           period_mnemonic: '3m1', period_unit: Month, start_date: '2021-10-01',
+           end_date: '2021-12-31',
+           required_columns: 'basket,event_timestamp,gross_spend', kind: derived}
+
   - name: engine_shape_respects_the_window
     description: >
       Rows on the window boundaries are included and rows one day outside are

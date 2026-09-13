@@ -27,20 +27,20 @@
 
   A single quote embedded in the cuisine value (e.g. an apostrophe in a place
   name) is doubled before being spliced into the SQL string literal, so the
-  emitted SQL stays valid. jstark.sql_string() would be the natural home for
-  this, but that macro does not exist until Task 13; do not wait for it here.
+  emitted SQL stays valid, via jstark.sql_string() (macros/core/feature_catalog.sql).
 #}
 
 {% macro register_mealkit_cuisine_features(definitions, ctx) %}
 
   {% for cuisine in ctx['cuisines'] %}
     {% set stem = cuisine ~ 'CuisineCount' %}
-    {% set cuisine_literal = cuisine | lower | replace("'", "''") %}
+    {% set cuisine_literal = cuisine | lower %}
     {% do definitions.update({stem: {
         'stem': stem,
         'kind': 'base',
         'aggregator': 'count_if',
-        'expression': 'lower(' ~ ctx['cols']['cuisine'] ~ ") = '" ~ cuisine_literal ~ "'",
+        'expression': 'lower(' ~ ctx['cols']['cuisine'] ~ ') = '
+              ~ jstark.sql_string(cuisine_literal),
         'default': '0',
         'required_columns': ['event_timestamp', 'cuisine'],
         'description_subject': 'Count of ' ~ cuisine ~ ' recipes',
