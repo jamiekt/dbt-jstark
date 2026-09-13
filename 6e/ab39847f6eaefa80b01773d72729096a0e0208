@@ -1,0 +1,28 @@
+macros/core/period/period_label.sql
+  s_768496ec7dbf5b::t_70dec76a4706c2 37
+  s_768496ec7dbf5b::t_d786ad5d4a1fec 1-36,38-103
+integration_tests/macros/jstark_test_suite.sql
+  s_768496ec7dbf5b::t_962c5be9d30d1f 9
+macros/core/naming.sql
+  s_768496ec7dbf5b::t_cd0ac02e5ea0ad 76-89
+integration_tests/macros/tests/test_period_label.sql
+  s_768496ec7dbf5b::t_12dc61881dd237 13-14
+  s_768496ec7dbf5b::t_4c8a8f06388c7d 1-12,15,19-75
+  s_768496ec7dbf5b::t_a1a56782202e6a 16-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6eab39847f6eaefa80b01773d72729096a0e0208",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
