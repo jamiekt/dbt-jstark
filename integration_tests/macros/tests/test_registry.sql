@@ -299,6 +299,56 @@
       "date '2022-01-01'" in core_cat['RecencyDays']['expression']
   ) %}
 
+  {#- Four core commentary strings are assembled from jstark's f-string
+      concatenation rather than copied whole, because jstark interpolates
+      self.feature_period.mnemonic into them. Only truthiness was pinned for
+      these ('... has commentary' in the loop above), so a wrong splice
+      position, wrong surrounding wording, or a reverted f-string placeholder
+      would pass silently. These four are written out as whole literals (using
+      core_ctx's own mnemonic, '3m1') rather than rebuilt via
+      ctx['period']['mnemonic'] concatenation, so this cannot pass vacuously by
+      mirroring the implementation's own assembly. Typos and spacing artefacts
+      from jstark's source (double space, no space after a full stop) are
+      preserved exactly, as in the definitions themselves. -#}
+  {% do jstark_assert_equal(
+      results, 'ApproxCustomerCount commentary interpolates the period mnemonic',
+      core_cat['ApproxCustomerCount']['commentary'],
+      'The approximate number of customers. Similar to CustomerCount_3m1 '
+      ~ 'except that it uses an approximation algorithm which '
+      ~ 'will not be as accurate as CustomerCount_3m1 but will be a lot '
+      ~ 'quicker to compute and in many cases will be "close enough".'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'ApproxProductCount commentary interpolates the period mnemonic',
+      core_cat['ApproxProductCount']['commentary'],
+      'The approximate number of products. Similar to ProductCount_3m1 '
+      ~ 'except that it uses an approximation algorithm which '
+      ~ 'will not be as accurate as ProductCount_3m1 but will be a lot '
+      ~ 'quicker to compute and in many cases will be "close enough".'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'RecencyDays commentary interpolates the period mnemonic',
+      core_cat['RecencyDays']['commentary'],
+      'This could be particularly useful (for example) in a grocery retailer '
+      ~ 'for determining when a customer most recently bought a product or '
+      ~ ' when a product was most recently bought in a store'
+      ~ 'Also note that this is very similar to '
+      ~ 'MostRecentPurchaseDate_3m1 '
+      ~ 'so consider which of these '
+      ~ 'features is most useful to you.'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'MostRecentPurchaseDate commentary interpolates the period mnemonic',
+      core_cat['MostRecentPurchaseDate']['commentary'],
+      'It is useful to be able to see when something was most recently '
+      ~ 'purchased.For example, grouping by Store and filtering where '
+      ~ 'MostRecentPurchaseDate is more than 2 days ago could be a useful '
+      ~ 'indicator of things which might not be available for purchase.'
+      ~ 'Also note that this is very similar to '
+      ~ 'RecencyDays_3m1 so consider which of these '
+      ~ 'features is most useful to you.'
+  ) %}
+
   {#- Mandated by the Task 9 ruling: every generator's full catalogue must have
       this assertion, or the guard is unarmed for that generator. Core is all
       base features today, so it has nothing to find; it is asserted anyway so
