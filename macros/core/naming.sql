@@ -73,3 +73,17 @@
       ~ '_' ~ feature_period['mnemonic']
   ) }}
 {% endmacro %}
+
+
+{% macro public_column_name(
+    stem, feature_period, use_absolute_periods, as_at, first_day_of_week
+) %}
+  {% if not use_absolute_periods %}
+    {{ return(jstark.column_name(stem, feature_period)) }}
+  {% endif %}
+  {{ return(
+      jstark.feature_base_name(stem, feature_period['uom'])
+      ~ '_'
+      ~ jstark.absolute_period_label(feature_period, as_at, first_day_of_week)
+  ) }}
+{% endmacro %}
