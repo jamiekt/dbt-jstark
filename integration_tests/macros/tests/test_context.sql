@@ -91,6 +91,10 @@
       results, 'try_resolve_as_at good date value',
       good_date['date'], d(2021, 10, 1)
   ) %}
+  {% do jstark_assert_equal(
+      results, 'try_resolve_as_at good date source',
+      good_date['source'], 'argument'
+  ) %}
 
   {# --- as_at rejects impossible dates (shape-valid but calendar-invalid) --- #}
   {% set bad_month = jstark.try_resolve_as_at('2021-13-45') %}
@@ -201,9 +205,9 @@
      is verified live but cannot be asserted in-sandbox because Jinja has no try/except.
      This assertion on try_weekday_index('') is the proxy: it confirms the lower-level
      validation works. What connects this proxy to the full behaviour is feature_context's
-     eager jstark.weekday_index(day_of_week) call at line 172, which means removing that
-     call would expose the gap. If that call is removed, the suite will not catch it, so
-     this comment serves as a record of that known limitation. #}
+     eager jstark.weekday_index(day_of_week) call, which means removing that call would
+     expose the gap. If that call is removed, the suite will not catch it, so this
+     comment serves as a record of that known limitation. #}
   {% set bad_dow = jstark.try_weekday_index('') %}
   {% do jstark_assert_equal(results, 'try_weekday_index empty ok', bad_dow['ok'], false) %}
 
@@ -211,5 +215,20 @@
   {% set default_dow = jstark.try_weekday_index(none) %}
   {% do jstark_assert_equal(results, 'try_weekday_index none ok', default_dow['ok'], true) %}
   {% do jstark_assert_equal(results, 'try_weekday_index none index', default_dow['index'], 0) %}
+
+  {# --- as_at fallback to run_date is covered --- #}
+  {# try_resolve_as_at(none) with no jstark_as_at var falls back to run_started_at and
+     marks source='run_date'. This is the only mechanism preventing silent feature drift
+     across runs when as_at is unspecified; resolve_as_at uses this signal to emit the
+     warning that names the jstark_as_at var to set. Both assertions pin this path. #}
+  {% set run_date_result = jstark.try_resolve_as_at(none) %}
+  {% do jstark_assert_equal(
+      results, 'try_resolve_as_at(none) source is run_date',
+      run_date_result['source'], 'run_date'
+  ) %}
+  {% do jstark_assert_true(
+      results, 'try_resolve_as_at(none) date is not none',
+      run_date_result['date'] is not none
+  ) %}
 
 {% endmacro %}

@@ -147,8 +147,14 @@
     Precedence: the argument, then the jstark_as_at var, then the run date.
 
     Falling back to the run date makes features non-deterministic between
-    runs, which is almost never what someone wants in a scheduled job, so the
-    fallback warns and names the var to set.
+    runs, which is almost never what someone wants in a scheduled job.
+
+    Returns: {'ok', 'error', 'date', 'source'} where:
+      - 'ok': true if validation passed, false otherwise
+      - 'error': error message if ok is false, none otherwise
+      - 'date': datetime.date object (none if error)
+      - 'source': 'argument' if from as_at arg, 'var' if from jstark_as_at var,
+                  'run_date' if fell back to run_started_at
   #}
 
   {% if as_at is not none %}
@@ -156,7 +162,12 @@
     {% if not result['ok'] %}
       {{ return(result) }}
     {% endif %}
-    {{ return(result) }}
+    {{ return({
+        'ok': true,
+        'error': none,
+        'date': result['date'],
+        'source': 'argument'
+    }) }}
   {% endif %}
 
   {% set from_var = var('jstark_as_at', none) %}
@@ -165,13 +176,19 @@
     {% if not result['ok'] %}
       {{ return(result) }}
     {% endif %}
-    {{ return(result) }}
+    {{ return({
+        'ok': true,
+        'error': none,
+        'date': result['date'],
+        'source': 'var'
+    }) }}
   {% endif %}
 
   {{ return({
       'ok': true,
       'error': none,
-      'date': jstark.as_date(run_started_at)
+      'date': jstark.as_date(run_started_at),
+      'source': 'run_date'
   }) }}
 {% endmacro %}
 
@@ -181,17 +198,17 @@
   {% if not result['ok'] %}
     {{ exceptions.raise_compiler_error(result['error']) }}
   {% endif %}
-  {% if result['date'] is not none %}
-    {{ return(result['date']) }}
+
+  {# Emit warning if falling back to run date #}
+  {% if result['source'] == 'run_date' %}
+    {% do exceptions.warn(
+        'jstark: no as_at was supplied, so features are being generated as at the '
+        ~ 'run date. Pass as_at=... or set the jstark_as_at var to make results '
+        ~ 'reproducible.'
+    ) %}
   {% endif %}
 
-  {# Fallback: use run date with warning #}
-  {% do exceptions.warn(
-      'jstark: no as_at was supplied, so features are being generated as at the '
-      ~ 'run date. Pass as_at=... or set the jstark_as_at var to make results '
-      ~ 'reproducible.'
-  ) %}
-  {{ return(jstark.as_date(run_started_at)) }}
+  {{ return(result['date']) }}
 {% endmacro %}
 
 
