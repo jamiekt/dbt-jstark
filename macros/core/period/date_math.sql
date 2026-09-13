@@ -111,7 +111,7 @@
 
 {% macro weekday_index(first_day_of_week) %}
   {% set names = jstark.weekday_names() %}
-  {% set name = first_day_of_week if first_day_of_week else 'Monday' %}
+  {% set name = 'Monday' if first_day_of_week is none else first_day_of_week %}
   {% if name not in names %}
     {% do jstark.raise_error(
         jstark.error_codes()['invalid_first_day_of_week'],

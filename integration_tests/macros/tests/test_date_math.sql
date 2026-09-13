@@ -133,6 +133,12 @@
     ) %}
   {% endfor %}
 
+  {# --- weekday_index must only default when omitted, not on invalid values --- #}
+  {% do jstark_assert_equal(
+      results, "weekday_index('Monday') still returns 0",
+      jstark.weekday_index('Monday'), 0
+  ) %}
+
   {# --- week boundaries. 2022-01-01 is a Saturday. --- #}
   {% set wk_cases = [
       ['Monday', d(2021, 12, 27), d(2022, 1, 2)],
