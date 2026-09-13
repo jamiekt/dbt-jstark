@@ -1,0 +1,33 @@
+macros/core/features/core_counts.sql
+  s_768496ec7dbf5b::t_d0bee5e5ff0936 1-4
+macros/core/features/test_features.sql
+  s_768496ec7dbf5b::t_d2355e0cee0be7 1-88
+macros/grocery/features/grocery_base.sql
+  s_768496ec7dbf5b::t_4cbd7f96638dec 1-3
+integration_tests/macros/jstark_test_suite.sql
+  s_768496ec7dbf5b::t_c9a587b50f2d0c 12
+macros/mealkit/features/mealkit_base.sql
+  s_768496ec7dbf5b::t_a19d3fc2ad872a 1-3
+macros/core/exceptions.sql
+  s_768496ec7dbf5b::t_96dcd300d3d1ae 18-19
+macros/core/registry.sql
+  s_768496ec7dbf5b::t_b91731ff598458 1-323
+integration_tests/macros/tests/test_registry.sql
+  s_768496ec7dbf5b::t_ca1f3b88ca4b02 1-192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "71432244a3d8f3dfaef320c8424a77a2c63cd504",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
