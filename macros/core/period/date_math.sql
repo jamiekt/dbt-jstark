@@ -109,16 +109,29 @@
 {% endmacro %}
 
 
-{% macro weekday_index(first_day_of_week) %}
+{% macro try_weekday_index(first_day_of_week) %}
   {% set names = jstark.weekday_names() %}
   {% set name = 'Monday' if first_day_of_week is none else first_day_of_week %}
   {% if name not in names %}
-    {% do jstark.raise_error(
-        jstark.error_codes()['invalid_first_day_of_week'],
-        "'" ~ name ~ "' is not a day name; expected one of " ~ (names | join(', '))
-    ) %}
+    {{ return({
+        'ok': false,
+        'error': jstark.error_message(
+            jstark.error_codes()['invalid_first_day_of_week'],
+            "'" ~ name ~ "' is not a day name; expected one of " ~ (names | join(', '))
+        ),
+        'index': none
+    }) }}
   {% endif %}
-  {{ return(names.index(name)) }}
+  {{ return({'ok': true, 'error': none, 'index': names.index(name)}) }}
+{% endmacro %}
+
+
+{% macro weekday_index(first_day_of_week) %}
+  {% set result = jstark.try_weekday_index(first_day_of_week) %}
+  {% if not result['ok'] %}
+    {{ exceptions.raise_compiler_error(result['error']) }}
+  {% endif %}
+  {{ return(result['index']) }}
 {% endmacro %}
 
 
