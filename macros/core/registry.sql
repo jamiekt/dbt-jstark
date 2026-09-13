@@ -250,6 +250,19 @@
 {% endmacro %}
 
 
+{#
+  Builds a plan, returning {'ok': false, 'error': ...} for an unrecognised
+  feature stem rather than raising, so a caller can test a request without
+  failing compilation.
+
+  It is NOT total. Building the catalogue is the first thing it does, and
+  invalid cuisines and colliding column names are rejected there, by
+  validate_cuisines and the catalogue's column-name uniqueness check. Those
+  raise, so they come out of this macro as a compilation error rather than as
+  an 'ok': false. Only the stem lookup below is trappable.
+
+  For a non-raising cuisine probe, call jstark.try_validate_cuisines directly.
+#}
 {% macro try_build_plan(
     generator, feature_stems, periods, as_at, first_day_of_week,
     use_absolute_periods, cols, cuisines
