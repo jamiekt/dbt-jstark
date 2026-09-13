@@ -1,0 +1,24 @@
+docs/superpowers/specs/2026-09-13-dbt-jstark-design.md
+  s_768496ec7dbf5b::t_88570c53c85ac6 118
+  s_768496ec7dbf5b::t_2be8e6cfaadd3f 276
+  s_768496ec7dbf5b::t_f7971f5b013b28 536-556
+  s_768496ec7dbf5b::t_5c7c9d533eb314 1-117,119-275,292-362,364-535,557-565
+  s_768496ec7dbf5b::t_2a25ff900e5353 277-291
+  s_768496ec7dbf5b::t_75fe089490f30a 363
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b10d088646e22ea08b3c278708495d73ec48a8ec",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
