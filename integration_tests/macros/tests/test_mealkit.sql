@@ -155,8 +155,8 @@
       rendering is proven against a live query by the warehouses.yml
       workflow (see test_adapters.sql's own header comment) - not here. That
       keeps this assertion adapter-independent, so it neither needs nor wants
-      a target.type guard, and the suite's assertion count stays identical on
-      every warehouse. -#}
+      a target.type guard: both sides render through whichever adapter is
+      active. -#}
   {% do jstark_assert_equal(
       results, 'Allergens defaults through the empty_string_array seam',
       cat['Allergens']['default'], jstark.empty_string_array()
