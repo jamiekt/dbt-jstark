@@ -32,8 +32,8 @@
   {% do jstark_assert_contains(
       results, 'derived expression has no coalesce when the default is null',
       sql,
-      'cast(test_spend_3m1 as ' ~ dbt.type_float()
-      ~ ') / nullif(test_basket_count_3m1, 0) as test_spend_per_basket_3m1'
+      'cast(test_spend_3m1 as double precision) '
+      ~ '/ nullif(test_basket_count_3m1, 0) as test_spend_per_basket_3m1'
   ) %}
   {% do jstark_assert_contains(results, 'group by', sql, 'group by customer') %}
   {% do jstark_assert_contains(

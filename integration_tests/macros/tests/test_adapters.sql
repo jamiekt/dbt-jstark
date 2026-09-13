@@ -27,11 +27,15 @@
       ~ window ~ ') and allergen is not null))'
   ) %}
 
+  {#- pinned as a literal 'double precision', not dbt.type_float() ~ ..., so
+      this cannot pass vacuously if the implementation regresses to a
+      single-precision cast: see jstark_double_type.sql for why that
+      distinction matters (it is invisible until a safe_divide result feeds
+      another safe_divide, as grocery's AvgPurchaseCycle chain does). -#}
   {% do jstark_assert_equal(
       results, 'safe_divide',
       jstark.safe_divide('gross_spend_3m1', 'basket_count_3m1'),
-      'cast(gross_spend_3m1 as ' ~ dbt.type_float()
-      ~ ') / nullif(basket_count_3m1, 0)'
+      'cast(gross_spend_3m1 as double precision) / nullif(basket_count_3m1, 0)'
   ) %}
 
   {# --- aggregate_sql covers every aggregator --- #}
