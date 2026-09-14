@@ -1,0 +1,52 @@
+integration_tests/macros/tests/test_mealkit.sql
+  s_768496ec7dbf5b::t_b587bbe0070c9a 5
+integration_tests/macros/tests/test_engine.sql
+  s_768496ec7dbf5b::t_fde5b33a0ed828 140-150,155,158-159,162-163,166-167
+macros/core/feature_catalog.sql
+  s_768496ec7dbf5b::t_231923ac42b9a2 121
+  s_768496ec7dbf5b::t_793d486834b49d 67
+integration_tests/macros/tests/test_registry.sql
+  s_768496ec7dbf5b::t_b587bbe0070c9a 5
+integration_tests/macros/tests/test_grocery.sql
+  s_768496ec7dbf5b::t_b587bbe0070c9a 5
+macros/core/context.sql
+  s_768496ec7dbf5b::t_29657176230e8f 4-6
+  s_768496ec7dbf5b::t_d0eca0b7f92c73 24-37,39-40,42
+macros/grocery/grocery_features.sql
+  s_768496ec7dbf5b::t_f8b92921575a27 23,33
+integration_tests/macros/tests/test_harness.sql
+  s_768496ec7dbf5b::t_ebc9c65c77bb56 135
+macros/core/generate_schema_yml.sql
+  s_768496ec7dbf5b::t_f8b92921575a27 47,87
+integration_tests/macros/tests/test_context.sql
+  s_768496ec7dbf5b::t_5a4a1cca3887b2 251-257,259-260,263-264
+  s_768496ec7dbf5b::t_8b9a66498642f4 14-20,22,25-26,29,31-32,34-35
+  s_768496ec7dbf5b::t_690ab17f77ea10 163-166
+README.md
+  s_768496ec7dbf5b::t_041ffeaddb5e77 174-180,184-188,194-202
+  s_768496ec7dbf5b::t_bf88877f632134 399,404
+  s_768496ec7dbf5b::t_197973ba25c16e 114
+  s_768496ec7dbf5b::t_57b48d5e3d3ea7 370-373
+integration_tests/macros/tests/test_catalog.sql
+  s_768496ec7dbf5b::t_2b7513103810ab 79
+  s_768496ec7dbf5b::t_35619d2ae88762 68
+  s_768496ec7dbf5b::t_fba446672ed6b0 123
+macros/core/generate_features.sql
+  s_768496ec7dbf5b::t_793d486834b49d 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7df23cc9255a4cc58f36db98b918a8db013b3db8",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
