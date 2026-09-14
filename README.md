@@ -81,8 +81,8 @@ A feature period is a window ending on or before `as_at`, written as a mnemonic:
 
 ```
 52w0
-││ └── end:   0 weeks before as_at
-│└──── unit:  weeks
+│ │└── end:   0 weeks before as_at
+│ └─── unit:  weeks
 └───── start: 52 weeks before as_at
 ```
 
