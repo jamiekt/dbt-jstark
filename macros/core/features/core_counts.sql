@@ -1,5 +1,5 @@
 {#
-  Core features: the ones that make sense whatever the industry.
+  Core features: the ones that make sense whatever the domain.
 
   register_core_features takes the generator name because mealkit uses only a
   subset: spend has no meaning for a business that sells recipe boxes at a

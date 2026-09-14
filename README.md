@@ -336,10 +336,10 @@ dbt-core's cross-database macros or through adapter dispatch.
 
 Adding an adapter means implementing at most five macros; see `CONTRIBUTING.md`.
 
-## 10. Adding your own industry
+## 10. Adding your own domain
 
 Grocery and mealkit are not special. Each is a set of feature definitions plus a
-three-line entry point, sitting on the same core engine — so a new industry is the
+three-line entry point, sitting on the same core engine — so a new domain is the
 same two things.
 
 1. **Write a registration macro** that adds your definitions to a dict. Base
@@ -381,12 +381,12 @@ same two things.
    ```
 
 You get periods, naming, absolute labels, defaults, dependency levelling, the
-catalogue and the `schema.yml` generator for free. If your industry needs an input
+catalogue and the `schema.yml` generator for free. If your domain needs an input
 column that is not in the canonical list, add it to `jstark.canonical_columns()`.
 
 Steps 2 and 3 mean this has to happen inside a fork or a PR rather than in your
 own project — the core cannot discover generators it does not know about. A PR is
-welcome; two industries is not a design, it is a coincidence.
+welcome; two domains is not a design, it is a coincidence.
 
 ## 11. Parity with jstark
 

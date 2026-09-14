@@ -41,7 +41,7 @@
     ) %}
   {% endif %}
 
-  {#- core first: the industry generators add to what core registered, and
+  {#- core first: the domain generators add to what core registered, and
       mealkit's per-cuisine features need the rest of the catalogue in place
       before they can tell whether a cuisine collides with it -#}
   {% do jstark.register_core_features(definitions, ctx, generator) %}
