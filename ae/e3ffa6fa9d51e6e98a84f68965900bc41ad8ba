@@ -1,0 +1,25 @@
+macros/core/features/core_counts.sql
+  s_768496ec7dbf5b::t_2862af96ca22cd 2
+README.md
+  s_768496ec7dbf5b::t_39f47a3a1e7857 384
+  s_768496ec7dbf5b::t_d151e3e8751cb8 389
+  s_768496ec7dbf5b::t_afdf78631a46d6 339,342
+macros/core/registry.sql
+  s_768496ec7dbf5b::t_2d310753799369 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aee3ffa6fa9d51e6e98a84f68965900bc41ad8ba",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
