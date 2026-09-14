@@ -1,0 +1,33 @@
+scripts/feature_tables.py
+  s_768496ec7dbf5b::t_411258585d105a 1-48
+pyproject.toml
+  s_768496ec7dbf5b::t_638f48b0b48c72 19
+.github/workflows/build.yml
+  s_768496ec7dbf5b::t_10f190cdedcb8d 71-73
+CONTRIBUTING.md
+  s_768496ec7dbf5b::t_9cf59201c21e7a 53
+README.md
+  s_768496ec7dbf5b::t_33f8ec7701e488 262-265
+  s_768496ec7dbf5b::t_3bde57e1488c88 252
+  s_768496ec7dbf5b::t_482e25c5f08266 196-199
+  s_768496ec7dbf5b::t_5a16e170f05db9 291
+  s_768496ec7dbf5b::t_34a799ebdaa61f 209-212
+uv.lock
+  s_768496ec7dbf5b::t_6cc095998de348 395-403,721,737-740,2845-2846
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4b7ddd92f1e586e26f08408af46d939580596511",
+  "prompts": {},
+  "sessions": {
+    "s_768496ec7dbf5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eaad1553-da91-45bf-9b56-0b590abbbb2a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jamie Thomson <854953+jamiekt@users.noreply.github.com>"
+    }
+  }
+}
