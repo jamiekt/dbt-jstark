@@ -1,0 +1,7 @@
+packages:
+  - local: ../
+    name: jstark
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.4.1
+sha1_hash: 0689c0f8ad2682fed452331e636ef5251cfd549b

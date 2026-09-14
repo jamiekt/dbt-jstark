@@ -1,0 +1,5 @@
+customer,basket,store,channel,product,event_timestamp,quantity,gross_spend,net_spend,discount
+c1,b1,s1,online,p1,2021-10-01,2,10.0,8.0,2.0
+c1,b1,s1,online,p2,2021-10-01,2,6.0,6.0,0.0
+c1,b2,s2,store,p1,2021-12-30,4,16.0,14.0,2.0
+c1,b3,s1,online,p1,2022-01-01,9,99.0,99.0,9.0

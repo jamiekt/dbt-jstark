@@ -1,0 +1,24 @@
+[project]
+name = "dbt-jstark-dev"
+version = "0.1.0"
+description = "Development environment for the dbt-jstark package. Not published; the deliverable is the dbt package itself."
+requires-python = ">=3.11"
+dependencies = [
+    "dbt-core>=1.8,<2.0",
+    "dbt-duckdb>=1.8,<2.0",
+]
+
+[project.optional-dependencies]
+postgres = ["dbt-postgres>=1.8,<2.0"]
+snowflake = ["dbt-snowflake>=1.8,<2.0"]
+bigquery = ["dbt-bigquery>=1.8,<2.0"]
+databricks = ["dbt-databricks>=1.8,<2.0"]
+
+[dependency-groups]
+dev = [
+    "cogapp",
+    "pre-commit",
+]
+
+[tool.uv]
+package = false

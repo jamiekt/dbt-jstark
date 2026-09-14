@@ -1,0 +1,110 @@
+name: warehouses
+
+# Not run on push: these need credentials, and forks do not have them.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jstark
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      JSTARK_POSTGRES_HOST: localhost
+      JSTARK_POSTGRES_USER: postgres
+      JSTARK_POSTGRES_PASSWORD: postgres
+      JSTARK_POSTGRES_DATABASE: jstark
+      JSTARK_POSTGRES_SCHEMA: jstark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --extra postgres
+      - working-directory: integration_tests
+        run: uv run dbt deps
+      - working-directory: integration_tests
+        run: uv run dbt build --target postgres --profiles-dir . --exclude tag:duckdb_only
+
+  warehouse:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: snowflake
+            extra: snowflake
+            gate: SNOWFLAKE_ACCOUNT
+          - target: bigquery
+            extra: bigquery
+            gate: BIGQUERY_KEYFILE_JSON
+          - target: databricks
+            extra: databricks
+            gate: DATABRICKS_HOST
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether credentials are configured
+        id: gate
+        env:
+          GATE: ${{ secrets[matrix.gate] }}
+        run: |
+          if [ -z "${GATE}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No ${{ matrix.gate }} secret; skipping ${{ matrix.target }}."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: astral-sh/setup-uv@v5
+        if: steps.gate.outputs.configured == 'true'
+
+      - run: uv sync --extra ${{ matrix.extra }}
+        if: steps.gate.outputs.configured == 'true'
+
+      - working-directory: integration_tests
+        if: steps.gate.outputs.configured == 'true'
+        run: uv run dbt deps
+
+      # dbt-bigquery's service-account method reads a keyfile PATH, and
+      # profiles.yml expects JSTARK_BIGQUERY_KEYFILE to be one. The secret
+      # holds the JSON itself, so it has to land on disk first. Written
+      # outside the workspace so it cannot be picked up by dbt or committed.
+      - name: Materialise the BigQuery keyfile
+        if: steps.gate.outputs.configured == 'true' && matrix.target == 'bigquery'
+        env:
+          KEYFILE_JSON: ${{ secrets.BIGQUERY_KEYFILE_JSON }}
+        run: |
+          keyfile="${RUNNER_TEMP}/bigquery-keyfile.json"
+          printf '%s' "${KEYFILE_JSON}" > "${keyfile}"
+          chmod 600 "${keyfile}"
+          echo "JSTARK_BIGQUERY_KEYFILE=${keyfile}" >> "$GITHUB_ENV"
+
+      - working-directory: integration_tests
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          JSTARK_SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          JSTARK_SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          JSTARK_SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          JSTARK_SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          JSTARK_SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          JSTARK_SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          JSTARK_SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          JSTARK_BIGQUERY_PROJECT: ${{ secrets.BIGQUERY_PROJECT }}
+          JSTARK_BIGQUERY_DATASET: ${{ secrets.BIGQUERY_DATASET }}
+          # JSTARK_BIGQUERY_KEYFILE is set by the step above, via GITHUB_ENV.
+          JSTARK_DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          JSTARK_DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
+          JSTARK_DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          JSTARK_DATABRICKS_SCHEMA: ${{ secrets.DATABRICKS_SCHEMA }}
+        run: |
+          uv run dbt build --target ${{ matrix.target }} --profiles-dir . \
+            --exclude tag:duckdb_only

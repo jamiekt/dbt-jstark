@@ -1,0 +1,81 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Install dbt packages
+        working-directory: integration_tests
+        run: uv run dbt deps
+
+      - name: Parse the project
+        working-directory: integration_tests
+        run: uv run dbt parse --profiles-dir .
+
+      - name: Layer 1 — macro logic
+        working-directory: integration_tests
+        run: uv run dbt run-operation jstark_test_suite --profiles-dir .
+
+      # The second run is not redundant: the var('jstark_as_at') rung of
+      # try_resolve_as_at can only be exercised by a run that actually sets the
+      # var, and test_context.sql asserts on that rung when one is set. Both
+      # runs make the same number of assertions.
+      - name: Layer 1 — macro logic, with jstark_as_at set
+        working-directory: integration_tests
+        run: |
+          uv run dbt run-operation jstark_test_suite --profiles-dir . \
+            --vars '{jstark_as_at: 2021-10-01}'
+
+      - name: Layer 2 — generated SQL
+        working-directory: integration_tests
+        run: |
+          uv run dbt seed --profiles-dir .
+          uv run dbt test --select test_type:unit --profiles-dir .
+
+      - name: Layer 3 — end to end
+        working-directory: integration_tests
+        run: uv run dbt build --profiles-dir .
+
+      # This script is the ONLY coverage anywhere of the warning
+      # resolve_as_at emits when as_at falls through to the run date. It
+      # promotes JinjaLogWarning to an error so the warning becomes a nonzero
+      # exit; nothing else in the three layers can assert on a warning.
+      - name: The as_at run-date warning
+        run: ./integration_tests/check_as_at_warning.sh
+
+      - name: Generate docs
+        working-directory: integration_tests
+        run: uv run dbt docs generate --profiles-dir .
+
+      - name: Check the README feature tables are up to date
+        run: |
+          uv run cog --check --diff -I scripts \
+            --check-fail-msg='Run "uv run cog -r -I scripts README.md" and commit the result.' \
+            README.md
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run --all-files

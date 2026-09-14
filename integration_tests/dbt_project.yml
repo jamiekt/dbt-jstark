@@ -1,0 +1,24 @@
+name: 'jstark_integration_tests'
+version: '0.1.0'
+config-version: 2
+
+profile: 'jstark_integration_tests'
+
+require-dbt-version: [">=1.8.0", "<2.0.0"]
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+target-path: "target"
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  jstark_integration_tests:
+    +materialized: table
+
+seeds:
+  jstark_integration_tests:
+    +quote_columns: false
