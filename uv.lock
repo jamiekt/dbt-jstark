@@ -393,6 +393,15 @@ wheels = [
 ]
 
 [[package]]
+name = "cogapp"
+version = "3.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/ea/4ffa8095e0b675e9961cbdcad002c09d35d4ab76ff99d61a014e9e6bcd53/cogapp-3.6.0.tar.gz", hash = "sha256:ec2a9170bfa644bf0d91996fdb5576c13d7e5e848bb2378a6f92727b48f92604", size = 59742, upload-time = "2025-09-21T15:54:13.553Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/1c/23b5110b7cb305f0fe3a5d6809d6804c1cb57d57b59516dbb5e24aaf95fc/cogapp-3.6.0-py3-none-any.whl", hash = "sha256:6ea11c63221f92978d37d8d76208eadeae2a6e4641d323f165738a5464a19d32", size = 30550, upload-time = "2025-09-21T15:54:12.205Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -709,6 +718,7 @@ snowflake = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "cogapp" },
     { name = "pre-commit" },
 ]
 
@@ -724,7 +734,10 @@ requires-dist = [
 provides-extras = ["postgres", "snowflake", "bigquery", "databricks"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pre-commit" }]
+dev = [
+    { name = "cogapp" },
+    { name = "pre-commit" },
+]
 
 [[package]]
 name = "dbt-postgres"
@@ -2829,8 +2842,8 @@ name = "secretstorage"
 version = "3.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cryptography" },
-    { name = "jeepney" },
+    { name = "cryptography", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "jeepney", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/03/e834bcd866f2f8a49a85eaff47340affa3bfa391ee9912a952a1faa68c7b/secretstorage-3.5.0.tar.gz", hash = "sha256:f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be", size = 19884, upload-time = "2025-11-23T19:02:53.191Z" }
 wheels = [

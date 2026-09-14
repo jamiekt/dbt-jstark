@@ -68,9 +68,9 @@ jobs:
 
       - name: Check the README feature tables are up to date
         run: |
-          ./scripts/update-readme.sh
-          git diff --exit-code README.md \
-            || (echo "README feature tables are stale. Run ./scripts/update-readme.sh and commit." && exit 1)
+          uv run cog --check --diff -I scripts \
+            --check-fail-msg='Run "uv run cog -r -I scripts README.md" and commit the result.' \
+            README.md
 
   pre-commit:
     runs-on: ubuntu-latest

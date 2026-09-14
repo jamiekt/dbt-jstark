@@ -50,7 +50,7 @@ uv run dbt build --profiles-dir .
    `integration_tests/macros/tests/test_*.sql`, and bump the expected count.
 3. Add its expected value to the matching unit test in
    `integration_tests/models/<generator>/_*.yml`.
-4. Run `./scripts/update-readme.sh` and commit the regenerated table.
+4. Run `uv run cog -r -I scripts README.md` and commit the regenerated table.
 
 A definition is a dict. Base features aggregate input columns:
 
