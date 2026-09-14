@@ -61,11 +61,10 @@
     feature_stems=none,
     first_day_of_week=none,
     use_absolute_periods=false,
-    column_map={},
     cuisines=[]
 ) %}
 
-  {% set cols = jstark.resolve_columns(column_map) %}
+  {% set cols = jstark.resolve_columns() %}
   {% set resolved_as_at = jstark.resolve_as_at(as_at) %}
   {% set periods = jstark.parse_feature_periods(feature_periods) %}
   {% set plan = jstark.build_plan(
@@ -115,12 +114,11 @@
     feature_stems=none,
     first_day_of_week=none,
     use_absolute_periods=false,
-    column_map={},
     cuisines=[]
 ) %}
 {%- set rows = jstark.catalog_rows(
     generator, as_at, feature_periods, feature_stems, first_day_of_week,
-    use_absolute_periods, column_map, cuisines
+    use_absolute_periods, cuisines
 ) -%}
 {%- for row in rows %}
 {% if not loop.first %}union all

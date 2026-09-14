@@ -22,7 +22,6 @@
       feature_stems=none,
       first_day_of_week='Monday',
       use_absolute_periods=false,
-      column_map={},
       cuisines=cuisines
   ) %}
 

@@ -40,13 +40,12 @@
     feature_stems=none,
     first_day_of_week=none,
     use_absolute_periods=false,
-    column_map={},
     cuisines=[]
 ) %}
 
   {% set resolved_as_at = jstark.resolve_as_at(as_at) %}
   {% set periods = jstark.parse_feature_periods(feature_periods) %}
-  {% set cols = jstark.resolve_columns(column_map) %}
+  {% set cols = jstark.resolve_columns() %}
   {#- bare column names only, and no repeats; see try_resolve_group_by in
       macros/core/context.sql for why an expression cannot work here -#}
   {% set group_by_columns = jstark.resolve_group_by(group_by) %}

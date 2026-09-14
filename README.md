@@ -111,13 +111,12 @@ Both generators take the same parameters, and `mealkit_features` adds `cuisines`
 | Parameter | Default | Meaning |
 | --- | --- | --- |
 | `input` | required | A `ref()`, `source()`, or SQL string producing the input rows. |
-| `group_by` | required | Columns to aggregate by, e.g. `['customer']`. Bare column names only; see below. |
+| `group_by` | required | Columns to aggregate by, e.g. `['customer']`. Bare column names only; see §6. |
 | `as_at` | see below | The date the features are calculated as at. |
 | `feature_periods` | `['52w0']` | Mnemonics or period dicts, each period at most once. |
 | `feature_stems` | all | Restrict to named features, e.g. `['NetSpend', 'BasketCount']`. |
 | `first_day_of_week` | `Monday` | Which day starts a week, for `w` periods. |
 | `use_absolute_periods` | `false` | Name columns by date rather than by mnemonic. |
-| `column_map` | `{}` | Rename input columns; see below. |
 | `cuisines` | `[]` | Mealkit only: one count feature per cuisine. |
 
 **`as_at`** resolves in this order: the argument, then `var('jstark_as_at')`, then
@@ -172,19 +171,35 @@ the set.
 | `net_spend`, `gross_spend`, `discount` | spend features |
 | `cuisine`, `recipe`, `allergen` | mealkit features |
 
-If your columns are named differently, map them:
+Note there is no `timestamp` or `order` column, unlike jstark: both are reserved
+words in one warehouse or another. Use `event_timestamp` and `order_id`.
+
+### Columns named something else
+
+There is no rename parameter. If your table names these columns differently,
+pass SQL instead of a `ref()` and alias them there:
 
 ```sql
 {{ jstark.grocery_features(
-    input=ref('transactions'),
+    input="select txn_date as event_timestamp,
+                  transaction_id as basket,
+                  price * quantity as gross_spend,
+                  customer_id
+           from " ~ ref('transactions'),
     group_by=['customer_id'],
-    column_map={'event_timestamp': 'txn_date', 'basket': 'transaction_id'},
     feature_periods=['13w0']
 ) }}
 ```
 
-Note there is no `timestamp` or `order` column, unlike jstark: both are reserved
-words in one warehouse or another. Use `event_timestamp` and `order_id`.
+The string is inlined as the first CTE, so everything downstream sees the
+canonical names while your table keeps its own. The same route handles a derived
+grouping column, which is why `group_by` takes bare column names and not
+expressions: compute `date_trunc('month', txn_date) as txn_month` in the `input`
+SQL and name `txn_month` in `group_by`.
+
+One thing this does not change is the documentation: the `Requires` column in §7,
+and `jstark_generate_schema_yml`, always report the canonical names, because a
+feature's required columns are what it reads after the rename.
 
 ## 7. Features reference
 
@@ -352,7 +367,10 @@ same two things.
 
 1. **Write a registration macro** that adds your definitions to a dict. Base
    features aggregate input columns; derived features reference other features by
-   stem and period. `CONTRIBUTING.md` has the dict shape for both.
+   stem and period. `CONTRIBUTING.md` has the dict shape for both. An input column
+   your definitions read has to be in `jstark.canonical_columns()`, so `call_id`
+   below means adding it there — that list is the one place the input columns are
+   named.
 
    ```sql
    {% macro register_telco_features(definitions, ctx) %}
@@ -378,12 +396,12 @@ same two things.
    ```sql
    {% macro telco_features(input, group_by, as_at=none, feature_periods=none,
                            feature_stems=none, first_day_of_week=none,
-                           use_absolute_periods=false, column_map={}) %}
+                           use_absolute_periods=false) %}
      {{ jstark.generate_features(
          input=input, group_by=group_by, generator='telco', as_at=as_at,
          feature_periods=feature_periods, feature_stems=feature_stems,
          first_day_of_week=first_day_of_week,
-         use_absolute_periods=use_absolute_periods, column_map=column_map
+         use_absolute_periods=use_absolute_periods
      ) }}
    {% endmacro %}
    ```

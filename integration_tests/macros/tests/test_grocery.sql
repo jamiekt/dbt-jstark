@@ -2,7 +2,7 @@
 
   {% set d = modules.datetime.date %}
   {% set as_at = d(2022, 1, 1) %}
-  {% set cols = jstark.resolve_columns({}) %}
+  {% set cols = jstark.resolve_columns() %}
   {% set ctx = jstark.feature_context(
       jstark.parse_feature_period('3m1'), as_at, 'Monday', false, cols, []
   ) %}

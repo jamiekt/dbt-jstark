@@ -137,42 +137,34 @@
       'select customer, store, test_spend_3m1, test_spend_0d0 from jstark_base'
   ) %}
 
-  {# --- column_map reaches the emitted SQL --- #}
-  {% set mapped_sql = jstark_normalise_sql(jstark.generate_features(
-      input='select * from transactions',
+  {#- An input whose columns are named differently is handled by renaming them
+      in the SQL passed as `input`, which is the only route this package
+      provides — see README section 6. The string is inlined as the first CTE,
+      so the aggregate and the window below both see the canonical names while
+      the caller's table keeps its own. A computed input column works the same
+      way, which is why gross_spend is aliased from an expression here. -#}
+  {% set renaming_input =
+      'select txn_ts as event_timestamp, price * quantity as gross_spend, '
+      ~ 'customer from transactions' %}
+  {% set renamed_sql = jstark_normalise_sql(jstark.generate_features(
+      input=renaming_input,
       group_by=['customer'],
       generator='test',
       as_at='2022-01-01',
       feature_periods=['3m1'],
-      feature_stems=['TestSpend'],
-      column_map={'gross_spend': 'sales_value', 'event_timestamp': 'txn_ts'}
+      feature_stems=['TestSpend']
   )) %}
   {% do jstark_assert_contains(
-      results, 'column_map in the aggregate',
-      mapped_sql, 'then sales_value end)'
+      results, 'the input SQL is inlined verbatim',
+      renamed_sql, renaming_input
   ) %}
   {% do jstark_assert_contains(
-      results, 'column_map in the window',
-      mapped_sql, 'cast(txn_ts as date) between'
+      results, 'the aggregate reads the canonical column name',
+      renamed_sql, 'then gross_spend end)'
   ) %}
-
-  {#- a column_map value may be an expression, not only a rename. This is the
-      documented difference from group_by, whose entries must be bare
-      identifiers (see try_resolve_group_by in macros/core/context.sql): a
-      column_map value only ever lands inside an aggregate or a window
-      predicate, where an expression is well formed and needs no name. -#}
-  {% set expression_mapped_sql = jstark_normalise_sql(jstark.generate_features(
-      input='select * from transactions',
-      group_by=['customer'],
-      generator='test',
-      as_at='2022-01-01',
-      feature_periods=['3m1'],
-      feature_stems=['TestSpend'],
-      column_map={'gross_spend': 'price * quantity'}
-  )) %}
   {% do jstark_assert_contains(
-      results, 'an expression column_map reaches the aggregate',
-      expression_mapped_sql, 'then price * quantity end)'
+      results, 'the window reads the canonical timestamp column',
+      renamed_sql, 'cast(event_timestamp as date) between'
   ) %}
 
 {% endmacro %}

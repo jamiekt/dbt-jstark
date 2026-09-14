@@ -1,8 +1,9 @@
 {#
   Input columns, as_at resolution, and the per-period feature context.
 
-  Feature definitions never name a raw column; they read ctx.cols['gross_spend'].
-  That is what makes column_map work without every definition knowing about it.
+  Feature definitions never name a raw column; they read ctx.cols['gross_spend'],
+  so the set of input columns is declared in one place (canonical_columns) rather
+  than scattered through the definitions.
 
   Column references are emitted unquoted so that warehouse case-folding
   applies: Snowflake stores gross_spend as GROSS_SPEND and resolves the
@@ -20,70 +21,25 @@
 {% endmacro %}
 
 
-{% macro try_resolve_columns(column_map) %}
-  {% set canonical = jstark.canonical_columns() %}
-  {% set overrides = column_map if column_map else {} %}
+{% macro resolve_columns() %}
+  {#
+    The input columns a feature definition may read, as a dict.
 
-  {% for key in overrides %}
-    {% if key not in canonical %}
-      {{ return({
-          'ok': false,
-          'error': jstark.error_message(
-              jstark.error_codes()['unknown_column_map_key'],
-              "'" ~ key ~ "' is not a jstark input column; expected one of "
-              ~ (canonical | join(', '))
-          ),
-          'cols': none
-      }) }}
-    {% endif %}
-    {#
-      The value is checked for being a non-empty string and nothing more. It
-      is spliced into the emitted SQL unquoted, so it may be any expression —
-      `{'gross_spend': 'price * quantity'}` is a supported mapping, not a
-      mistake — which rules out an identifier-shape check. A malformed
-      expression here surfaces as a syntax error from the warehouse. That is
-      an acceptable trade: column_map is written by whoever writes the model,
-      who can already put arbitrary SQL in it.
+    Every canonical name maps to itself. The indirection is not a no-op for
+    the reader: it is the single place that names the input columns, so a
+    definition asks for ctx.cols['gross_spend'] rather than hard-coding the
+    string, and adding an input column is one edit here plus one in
+    canonical_columns.
 
-      Deliberately laxer than try_resolve_group_by, which requires a bare
-      identifier. The difference is where the value lands: a column_map value
-      only ever appears inside an aggregate or a window predicate, where an
-      expression is well-formed and names nothing, whereas a group_by entry has
-      to survive being re-emitted against a CTE by name. An expression
-      column_map works today, and integration_tests/macros/tests/test_engine.sql
-      asserts that it reaches the emitted aggregate; an expression group_by
-      cannot be made to work without projecting an alias, which is a design
-      change rather than a validation change.
-    #}
-    {% set value = overrides[key] %}
-    {% if not (value is string and value | trim != '') %}
-      {{ return({
-          'ok': false,
-          'error': jstark.error_message(
-              jstark.error_codes()['invalid_column_map_value'],
-              "column_map['" ~ key ~ "'] must be a non-empty string, got '"
-              ~ (value | string) ~ "'"
-          ),
-          'cols': none
-      }) }}
-    {% endif %}
-  {% endfor %}
-
+    Renaming is the caller's job, done in the SQL passed as `input` — see
+    README section 6. jstark's own FeatureGenerator works the same way: it
+    takes a DataFrame whose columns are already named as it expects.
+  #}
   {% set cols = {} %}
-  {% for name in canonical %}
-    {% do cols.update({name: overrides.get(name, name)}) %}
+  {% for name in jstark.canonical_columns() %}
+    {% do cols.update({name: name}) %}
   {% endfor %}
-
-  {{ return({'ok': true, 'error': none, 'cols': cols}) }}
-{% endmacro %}
-
-
-{% macro resolve_columns(column_map) %}
-  {% set result = jstark.try_resolve_columns(column_map) %}
-  {% if not result['ok'] %}
-    {{ exceptions.raise_compiler_error(result['error']) }}
-  {% endif %}
-  {{ return(result['cols']) }}
+  {{ return(cols) }}
 {% endmacro %}
 
 

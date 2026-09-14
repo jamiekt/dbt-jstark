@@ -20,8 +20,7 @@
     feature_periods=none,
     feature_stems=none,
     first_day_of_week=none,
-    use_absolute_periods=false,
-    column_map={}
+    use_absolute_periods=false
 ) %}
   {{ jstark.generate_features(
       input=input,
@@ -31,7 +30,6 @@
       feature_periods=feature_periods,
       feature_stems=feature_stems,
       first_day_of_week=first_day_of_week,
-      use_absolute_periods=use_absolute_periods,
-      column_map=column_map
+      use_absolute_periods=use_absolute_periods
   ) }}
 {% endmacro %}

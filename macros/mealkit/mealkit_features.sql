@@ -22,7 +22,6 @@
     feature_stems=none,
     first_day_of_week=none,
     use_absolute_periods=false,
-    column_map={},
     cuisines=[]
 ) %}
   {{ jstark.generate_features(
@@ -34,7 +33,6 @@
       feature_stems=feature_stems,
       first_day_of_week=first_day_of_week,
       use_absolute_periods=use_absolute_periods,
-      column_map=column_map,
       cuisines=cuisines
   ) }}
 {% endmacro %}

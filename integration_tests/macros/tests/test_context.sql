@@ -11,43 +11,28 @@
        'cuisine', 'recipe', 'allergen']
   ) %}
 
-  {# --- an empty column_map maps every canonical name to itself --- #}
-  {% set cols = jstark.resolve_columns({}) %}
+  {#- resolve_columns maps every canonical input column to itself. Renaming is
+      the caller's job, done in the SQL passed as `input`, so there is nothing
+      here to substitute — the dict exists so a definition can ask for
+      ctx.cols['gross_spend'] instead of hard-coding the string. The expected
+      values below are literals rather than canonical_columns() lookups, so a
+      change to that list cannot make these pass vacuously. -#}
+  {% set cols = jstark.resolve_columns() %}
   {% do jstark_assert_equal(
-      results, 'resolve_columns({}).gross_spend', cols['gross_spend'], 'gross_spend'
+      results, 'resolve_columns().gross_spend', cols['gross_spend'], 'gross_spend'
   ) %}
   {% do jstark_assert_equal(
-      results, 'resolve_columns({}) is complete',
+      results, 'resolve_columns().event_timestamp',
+      cols['event_timestamp'], 'event_timestamp'
+  ) %}
+  {% do jstark_assert_equal(
+      results, 'resolve_columns().allergen', cols['allergen'], 'allergen'
+  ) %}
+  {#- the count is compared against canonical_columns, which lines 6-12 already
+      pin against a literal list, so this is not circular -#}
+  {% do jstark_assert_equal(
+      results, 'resolve_columns() is complete',
       cols | length, jstark.canonical_columns() | length
-  ) %}
-
-  {# --- a mapped name is substituted, unmapped names are untouched --- #}
-  {% set mapped = jstark.resolve_columns(
-      {'gross_spend': 'sales_value', 'event_timestamp': 'txn_ts'}
-  ) %}
-  {% do jstark_assert_equal(
-      results, 'column_map substitutes gross_spend',
-      mapped['gross_spend'], 'sales_value'
-  ) %}
-  {% do jstark_assert_equal(
-      results, 'column_map substitutes event_timestamp',
-      mapped['event_timestamp'], 'txn_ts'
-  ) %}
-  {% do jstark_assert_equal(
-      results, 'column_map leaves others alone', mapped['quantity'], 'quantity'
-  ) %}
-
-  {# --- an unknown key is a typo, not a new column --- #}
-  {% set bad = jstark.try_resolve_columns({'grosspend': 'sales_value'}) %}
-  {% do jstark_assert_equal(results, 'try_resolve_columns bad key ok', bad['ok'], false) %}
-  {% do jstark_assert_equal(
-      results, 'try_resolve_columns bad key error',
-      bad['error'],
-      jstark.error_message(
-          jstark.error_codes()['unknown_column_map_key'],
-          "'grosspend' is not a jstark input column; expected one of "
-          ~ (jstark.canonical_columns() | join(', '))
-      )
   ) %}
 
   {# --- date literals --- #}
@@ -174,31 +159,11 @@
       'as_at_is_not_a_date' in bad_type['error']
   ) %}
 
-  {# --- column_map rejects empty string values --- #}
-  {% set bad_value = jstark.try_resolve_columns({'gross_spend': ''}) %}
-  {% do jstark_assert_equal(results, 'try_resolve_columns empty value ok', bad_value['ok'], false) %}
-  {% do jstark_assert_equal(
-      results, 'try_resolve_columns empty value error',
-      bad_value['error'],
-      jstark.error_message(
-          jstark.error_codes()['invalid_column_map_value'],
-          "column_map['gross_spend'] must be a non-empty string, got ''"
-      )
-  ) %}
-
-  {# --- column_map rejects whitespace-only values --- #}
-  {% set bad_ws_value = jstark.try_resolve_columns({'gross_spend': '   '}) %}
-  {% do jstark_assert_equal(results, 'try_resolve_columns whitespace value ok', bad_ws_value['ok'], false) %}
-  {% do jstark_assert_true(
-      results, 'try_resolve_columns whitespace value error has code',
-      'invalid_column_map_value' in bad_ws_value['error']
-  ) %}
-
   {# --- group_by takes bare column names, and each one only once --- #}
-  {#- unlike a column_map value, a group_by entry is re-emitted by name against
-      the base CTE, so an expression cannot resolve there; before this
-      validation existed group_by=["date_trunc('month', event_timestamp)"] gave
-      a raw Binder Error naming a column the caller never mentioned -#}
+  {#- a group_by entry is re-emitted by name against the base CTE, so an
+      expression cannot resolve there; before this validation existed
+      group_by=["date_trunc('month', event_timestamp)"] gave a raw Binder Error
+      naming a column the caller never mentioned -#}
   {% do jstark_assert_equal(
       results, 'group_by accepts bare identifiers',
       jstark.try_resolve_group_by(['customer', 'store_id', '_internal']),
@@ -283,12 +248,20 @@
   ) %}
   {% do jstark_assert_equal(results, 'ctx.cuisines', ctx['cuisines'], []) %}
 
-  {# --- the window follows a remapped timestamp column --- #}
+  {#- feature_context takes cols as a parameter, so handing it a dict whose
+      event_timestamp is something other than 'event_timestamp' proves the
+      window is built from cols rather than from a hard-coded column name.
+      resolve_columns never returns such a dict, which is exactly why the dict
+      is built here by hand. -#}
+  {% set other_cols = jstark.resolve_columns() %}
+  {% do other_cols.update({'event_timestamp': 'txn_ts'}) %}
   {% set remapped_ctx = jstark.feature_context(
-      jstark.parse_feature_period('0d0'), d(2022, 1, 1), 'Monday', false, mapped, []
+      jstark.parse_feature_period('0d0'), d(2022, 1, 1), 'Monday', false,
+      other_cols, []
   ) %}
   {% do jstark_assert_equal(
-      results, 'ctx.window honours column_map', remapped_ctx['window'],
+      results, 'ctx.window is built from cols, not a literal column name',
+      remapped_ctx['window'],
       jstark.to_date('txn_ts')
       ~ " between date '2022-01-01' and date '2022-01-01'"
   ) %}

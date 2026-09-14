@@ -2,7 +2,7 @@
 
   {% set d = modules.datetime.date %}
   {% set as_at = d(2022, 1, 1) %}
-  {% set cols = jstark.resolve_columns({}) %}
+  {% set cols = jstark.resolve_columns() %}
 
   {# --- single_unit_periods expands a window into whole units --- #}
   {% do jstark_assert_equal(

@@ -38,14 +38,13 @@
     feature_stems=none,
     first_day_of_week=none,
     use_absolute_periods=false,
-    column_map={},
     cuisines=[],
     group_by=[]
 ) %}
 
   {% set rows = jstark.catalog_rows(
       generator, as_at, feature_periods, feature_stems, first_day_of_week,
-      use_absolute_periods, column_map, cuisines
+      use_absolute_periods, cuisines
   ) %}
 
   {% set lines = ['version: 2', '', 'models:', '  - name: ' ~ model_name,
@@ -79,13 +78,12 @@
     feature_stems=none,
     first_day_of_week=none,
     use_absolute_periods=false,
-    column_map={},
     cuisines=[],
     group_by=[]
 ) %}
   {#- print, not log, so the output is clean enough to redirect into a file -#}
   {% do print(jstark.schema_yml_text(
       model_name, generator, as_at, feature_periods, feature_stems,
-      first_day_of_week, use_absolute_periods, column_map, cuisines, group_by
+      first_day_of_week, use_absolute_periods, cuisines, group_by
   )) %}
 {% endmacro %}

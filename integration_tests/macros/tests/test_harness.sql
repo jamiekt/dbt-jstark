@@ -98,10 +98,6 @@
       codes['feature_not_found'], 'feature_not_found'
   ) %}
   {% do jstark_assert_equal(
-      results, 'code: unknown_column_map_key',
-      codes['unknown_column_map_key'], 'unknown_column_map_key'
-  ) %}
-  {% do jstark_assert_equal(
       results, 'code: invalid_first_day_of_week',
       codes['invalid_first_day_of_week'], 'invalid_first_day_of_week'
   ) %}
@@ -112,10 +108,6 @@
   {% do jstark_assert_equal(
       results, 'code: as_at_is_not_a_date',
       codes['as_at_is_not_a_date'], 'as_at_is_not_a_date'
-  ) %}
-  {% do jstark_assert_equal(
-      results, 'code: invalid_column_map_value',
-      codes['invalid_column_map_value'], 'invalid_column_map_value'
   ) %}
   {% do jstark_assert_equal(
       results, 'code: unknown_generator',
@@ -140,7 +132,7 @@
   {#- the count as well as the names: a code added without an assertion here
       leaves the newest, least-exercised error message unpinned -#}
   {% do jstark_assert_equal(
-      results, 'every error code is pinned above', codes | length, 13
+      results, 'every error code is pinned above', codes | length, 11
   ) %}
 
   {# error_message formats consistently #}

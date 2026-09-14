@@ -7,7 +7,6 @@
       feature_stems=['GrossSpend', 'AvgGrossSpendPerBasket'],
       first_day_of_week='Monday',
       use_absolute_periods=false,
-      column_map={},
       cuisines=[]
   ) %}
 
@@ -66,7 +65,7 @@
   {% set deep = jstark.catalog_rows(
       generator='grocery', as_at='2022-01-01', feature_periods=['3m1'],
       feature_stems=['CyclesSinceLastPurchase'], first_day_of_week='Monday',
-      use_absolute_periods=false, column_map={}, cuisines=[]
+      use_absolute_periods=false, cuisines=[]
   ) %}
   {% do jstark_assert_equal(
       results, 'catalog required columns two levels down',
@@ -77,7 +76,7 @@
   {% set absolute = jstark.catalog_rows(
       generator='grocery', as_at='2022-01-01', feature_periods=['3m1'],
       feature_stems=['GrossSpend'], first_day_of_week='Monday',
-      use_absolute_periods=true, column_map={}, cuisines=[]
+      use_absolute_periods=true, cuisines=[]
   ) %}
   {% do jstark_assert_equal(
       results, 'catalog honours absolute periods',
@@ -121,7 +120,7 @@
   {% set catalog_names = jstark.catalog_rows(
       generator='mealkit', as_at='2022-01-01', feature_periods=['3m1'],
       feature_stems=none, first_day_of_week=none, use_absolute_periods=false,
-      column_map={}, cuisines=['Italian']
+      cuisines=['Italian']
   ) | map(attribute='feature_name') | list %}
   {% for name in catalog_names %}
     {% do jstark_assert_true(
